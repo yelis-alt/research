@@ -1,0 +1,38 @@
+This paper is dedicated to the development of the planning system for demand in transport infrastructure for the industrial 
+logistics operator JSK «RT-Logistics». In pursuit of this objective there has been conducted the analysis of the economic 
+activity of the selected company, which includes the review of the organizational structure, competitive position, 
+economic-financial position, logistics activity, obtained IT-infrastructure and the search for the problematic 
+business processes so as to determine the dysfunctions to be reengineered in the field of the logistics activity planning. 
+Apart from the analysis of the activity of the selected industrial logistics operator, there have been 
+reviewed the theoretical approaches to logistics activity planning in companies supported with the thorough 
+research of the real case-studies, approaches to the implementation of the forecast procedures, mathematical basis and 
+functioning mechanisms of some forecast tools and there have been conducted the comparative analysis of them in order to 
+make the final choice of the right combination of the reviewed elements deployed for the formation of the future 
+individual planning system most suitable for the focal enterprise. The result of the conducted research is the developed 
+planning system for demand in transport infrastructure that has been built with the platform for managing 
+databases «DBeaver» and programming platform «RStudio» sided with the prepared code in the programming language «R». 
+The high extent of the economy in the deployed human, financial and time resources is intrinsic for this developed 
+planning system, which can be proven by formulated economic justification in the form of economic effect proposed 
+by the introduction of this solution for the selected industrial logistics operator. The economic justification is 
+based on the clients’ real transport applications that were captured by the information system during the specific 
+period of time.
+Publication: https://www.hse.ru/edu/vkr/472929960.
+
+Данная работа посвящена разработке системы планирования потребности в транспортной инфраструктуре для 
+промышленного логистического оператора АО «РТ-Логистика». В рамках достижения данной цели проведён анализ 
+хозяйственной деятельности рассматриваемой компании, включающий в себя рассмотрение организационного управления, 
+конкурентного положения, финансово-экономического положения, логистической деятельности и имеющегося 
+ИТ-обеспечения, а также осуществлён поиск проблемных бизнес-процессов на предмет присутствия в них дисфункций 
+в области планирования логистической деятельности для осуществления их последующего реинжиниринга. Помимо анализа 
+деятельности рассматриваемого предприятия, рассмотрены теоретические подходы к планированию логистической деятельности 
+в компаниях с подробным разбором реальных задокументированных практик, подходы к выполнению процедуры прогнозирования, 
+математические смыслы и принципы работы некоторых инструментов прогнозирования, а также проведён их сравнительный 
+анализ с целью последующего выбора совокупности наиболее подходящих для фокусной компании элементов для формирования 
+будущей индивидуальной системы планирования на предприятии. Результатом проведённого исследования является 
+разработанная система планирования потребности в транспортной инфраструктуре, построенная с помощью платформы 
+для управления базами данных «DBeaver» и платформы для программирования «RStudio» с подготовленным кодом на 
+языке программирования «R». Разработанная система отличается высокой степенью экономичности в плане объёма 
+затрачиваемых человеческих, финансовых и временных ресурсов, что подтверждается сформированным обоснованием 
+экономического эффекта от её внедрения в фокусное предприятие, основанным на реальных транспортных заявках 
+клиентов компании за определённый временной промежуток из её информационной системы. </br>
+Публикация: https://www.hse.ru/edu/vkr/472929960;
