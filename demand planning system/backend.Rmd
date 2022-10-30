@@ -1,0 +1,330 @@
+---
+title: "Forecast"
+author: Елисеев Арсений (БЛГ-172)
+---
+
+#1) Подготовка данных к анализу:
+
+##Подключение необходимых библиотек
+
+```{r}
+library(tidyverse)
+library(forcats) 
+library(scales) 
+library(readr)
+library (dplyr)
+library (ggplot2)
+library (knitr)
+library (readxl)
+library (janitor)
+library (xts)
+library (scales)
+library (ggfortify)
+library(lubridate)
+library(ggrepel)
+library(readr)
+library(forecast)
+library(broom)
+library(GGally)
+library(forcats)
+library(tidyr)
+library(car)
+library(memisc)
+library(gridExtra)
+library (sarima)
+library (opera)
+library (zoo)
+library (TSstudio)
+```
+
+##Загрузка базы данных
+
+```{r}
+transport <- read_excel("C:/Users/Я/Desktop/Documents/HSE/Архив/Диплом/Материалы/Transport.xlsx")
+summary (transport)
+```
+
+##Удаление пустых строк в базе данных
+
+```{r}
+transport %>% remove_empty("rows")
+```
+
+## Приведение дневного датасета к месячному временному ряду с агрегацией данных по месячным 90%-квантилям
+
+```{r}
+transport$`Масса груза, т` <- as.numeric(transport$`Масса груза, т`)
+transport$`Дата заявки` <- as.Date(transport$`Дата заявки`, format = "%Y-%m-%d")
+date_set <- as.data.frame(cbind(seq(as.Date("2017/01/01"), by = "day", length.out = 1461), rep(0, 1461)))
+colnames(date_set) <- c("Дата заявки", "Mass")
+date_set$`Дата заявки` <- as.Date(date_set$`Дата заявки`, origin = "1970/01/01")
+date_set$`Дата заявки` <- as.Date(date_set$`Дата заявки`)
+transport_full <- full_join (date_set, transport, by = "Дата заявки")
+transport_full[is.na(transport_full)] <- 0
+transport_end <- transport_full %>% group_by(`Дата заявки`) %>% summarize (Mass = sum(`Масса груза, т`))
+names(transport_end)[names(transport_end) == 'Дата заявки'] <- 'Date'
+
+transport_final <- transport_end %>%
+                   mutate(month = format(Date, "%m"), year = format(Date, "%Y")) %>%
+                   group_by(month, year) %>%
+                   summarise(Quant = quantile(Mass, 0.9))
+
+transport_final$Date <- as.yearmon(paste(transport_final$year, transport_final$month), "%Y %m")
+transport_final <- transport_final[, c(4, 3)]
+transport_final <- transport_final[order(as.Date(transport_final$Date, format="%d/%m/")),]
+transport_final$Date <- as.Date(transport_final$Date, format = "%Y-%m-%d")
+```
+
+#2) Разведочный анализ:
+
+```{r message = FALSE, warning = FALSE}
+transport_final[2:37, ] %>% 
+ggplot(aes(x=as.POSIXct(Date), y=Quant)) +
+xlab ("Месяц") +
+ylab ("90%-квантиль величины спроса, тонны") + 
+geom_line (color = "#00AFBB", size =2)+
+scale_x_datetime(labels = date_format("%Y-%m"), breaks = date_breaks("months")) + theme(axis.text.x = element_text(angle = 90)) +
+  geom_smooth(method = "lm")
+```
+```{r}
+transport_final1 <- transport_final[1:37, 2]
+transport_ts <- ts(transport_final1, frequency = 12, start=c(2017,1,01), end=c(2019,12,01))
+transport_ts %>%
+stl(t.window=12, s.window="periodic", robust=TRUE) %>%
+  autoplot()+
+xlab ("Дата") +
+ylab ("90%-квантиль величины спроса, тонны")
+```
+
+# 3) Прогнозирование:
+
+## Создание обучающей и тестовой выборок
+
+```{r}
+transport_learn1 <-slice(transport_final,1:31)
+transport_learn <- ts(transport_learn1[c(2)], frequency = 12, start=c(2017,1), end=c(2019,7))
+```
+
+## Очищение выборок от влиятельных выбросов
+
+```{r}
+transport_ts_clean <- tsclean(transport_ts, replace.missing = TRUE, lambda = NULL)
+transport_learn_clean <- tsclean(transport_learn, replace.missing = TRUE, lambda = NULL)
+transport_ts_clean %>%
+stl(t.window=12, s.window="periodic", robust=TRUE) %>%
+  autoplot()+
+xlab ("Дата") +
+ylab ("90%-квантиль величины спроса, тонны")
+
+```
+
+## Построение моделей на обучающей выборке 
+
+```{r}
+holtwinters_full <- hw(transport_ts_clean, h = 12)
+sarima_full <- auto.arima(transport_ts_clean)
+ets_full <- stlf(transport_ts_clean)
+```
+
+## Визуализация моделей прогнозирования на обучающем периоде
+
+```{r}
+transport_ts_clean %>%  
+autoplot (series ="Факт", size =2) +
+    autolayer(holtwinters_full$fitted,  series = 'Метод Хольта-Уинтерса', size = 1,7) +
+    autolayer(sarima_full$fitted,  series = 'SARIMA', size = 1,7) +
+    autolayer(ets_full$fitted,  series = 'ETS', size = 1,7)+ 
+    xlab ("Дата") +
+    ylab ("90%-квантиль величины спроса, тонны")
+```
+
+## Расчёт ошибок обучающих периодов
+
+```{r warning = FALSE}
+holtwinters_learn <- hw(transport_learn_clean, h = 12)
+sarima_learn <- auto.arima(transport_learn_clean)
+ets_learn <- stlf(transport_learn_clean)
+
+error_learning <- rbind(accuracy(holtwinters_learn), 
+             accuracy(sarima_learn), accuracy(ets_learn))
+rownames(error_learning) <- c('Метод Хольта-Уинтерса', 'SARIMA', 'ETS')
+round (error_learning,digits = 2)
+```
+
+
+## Построение моделей прогнозирования на тестовом периоде
+
+```{r}
+holtwinters_expost <- hw(transport_learn_clean, h = 5)
+sarima_expost <- forecast(transport_learn_clean, h = 5)
+ets_expost <- forecast(transport_learn_clean, h = 5)
+```
+
+##Визуализация моделей прогнозирования на тестовом периоде
+
+```{r warning = FALSE}
+transport_ts_clean %>%  
+autoplot (series ="Факт", size = 2) +
+    autolayer(holtwinters_expost$mean,  series = 'Метод Хольта-Уинтерса', size = 1,7, PI = FALSE) +
+    autolayer(holtwinters_learn$fitted,  series = 'Метод Хольта-Уинтерса', size = 1,7, PI = FALSE) +
+    autolayer(sarima_expost$mean,  series = 'SARIMA', size = 2, PI = FALSE) +
+    autolayer(sarima_learn$fitted,  series = 'SARIMA', size = 1,7, PI = FALSE)+
+    autolayer(ets_expost$mean,  series = 'ETS', size = 1,7, PI = FALSE)+
+    autolayer(ets_learn$fitted,  series = 'ETS', size = 1,7, PI = FALSE)+
+    xlab ("Дата") +
+    ylab ("90%-квантиль величины спроса, тонны")
+```
+
+## Расчёт ошибок тестового периода
+
+```{r warning = FALSE}
+error_testing <- rbind(accuracy(transport_ts_clean[31:37], holtwinters_expost$mean), 
+             accuracy(transport_ts_clean[31:37], sarima_expost$mean), accuracy(transport_ts_clean[31:37],ets_expost$mean))
+rownames(error_testing) <- c('Метод Хольта-Уинтерса', 'SARIMA', 'ETS')
+round (error_testing,digits = 2)
+
+```
+
+## Комбинация моделей прогнозирования на тестовом периоде
+
+```{r warning = FALSE}
+test <- window (transport_ts_clean, start=c(2019,7), end = c(2020, 1))
+comb <- cbind(ETS=ets_expost$mean, SARIMA=sarima_expost$mean, Holt_Winters = holtwinters_expost$mean, test)
+view(comb)
+MLpol0 <- mixture(model = "MLpol", loss.type = "square")
+weights <- predict(MLpol0, comb, test, type='weights')
+round(weights, digits=2)
+```
+
+## Расчёт ошибок комбинации моделей прогнозирования на тестовом периоде
+
+```{r}
+combination <- (ets_expost$mean*weights[nrow(weights),1] + sarima_expost$mean*weights[nrow(weights),2] + holtwinters_expost$mean*weights[nrow(weights),3])
+error_doubletesting <- rbind(accuracy(transport_ts_clean[31:37],combination))
+round (error_doubletesting,digits = 2)
+```
+
+## Использование комбинации моделей для прогнозирования потребности в 2020 году
+
+```{r}
+transport_final1 <- transport_final[1:37, 2]
+transport_ts <- ts(transport_final1, frequency = 12, start=c(2017,1,01), end=c(2019,12,01))
+transport_ts_clean <- tsclean(transport_ts, replace.missing = TRUE, lambda = NULL)
+holtwinters_final <- hw(transport_ts_clean, h = 12)
+sarima_final <- forecast(transport_ts_clean, h = 12)
+ets_final <- forecast(transport_ts_clean, h = 12)
+
+forecast_final <- (ets_final$mean*weights[nrow(weights),1] + sarima_final$mean*weights[nrow(weights),2] + holtwinters_final$mean*weights[nrow(weights),3])
+transport_ts_clean %>%  
+autoplot (series ="Факт", size = 2) +
+    autolayer(forecast_final,  series = 'Прогноз', size = 2)+
+    xlab ("Дата") +
+    ylab ("90%-квантиль величины спроса, тонны")
+```
+
+# 3) Cопоставлеие факта и прогноза:
+
+## Визуализация факта и прогноза:
+
+```{r}
+holtwinters_final <- hw(transport_ts_clean, h = 12)
+sarima_final <- forecast(transport_ts_clean, h = 12)
+ets_final <- forecast(transport_ts_clean, h = 12)
+forecast_final <- (ets_final$mean*weights[nrow(weights),1] + sarima_final$mean*weights[nrow(weights),2] + holtwinters_final$mean*weights[nrow(weights),3])
+
+forecast_reshape <- ts_reshape(forecast_final, type = "wide", frequency = NULL)
+transport_xts <- cbind(transport_final[37:48, 1], forecast_reshape[,2])
+names(transport_xts)[names(transport_xts) == "forecast_reshape[, 2]"] <- "Mass"
+de <-data.frame("2021-01-01","0")
+names(de) <-c("Date","Mass")
+de$Date <- as.Date(de$Date, format="%Y-%m-%d")
+de$Mass <- as.numeric(de$Mass)
+de$Mass <- 0
+transport_xts <- rbind(transport_xts, de)
+transport.xts <- xts(transport_xts$Mass,order.by = transport_xts$Date)
+transport_plan <- na.locf(merge(transport.xts, foo=zoo(NA, order.by=seq(start(transport.xts), end(transport.xts),
+  "day",drop=F)))[, 1])
+transport_plan <- data.frame(Date=index(transport_plan), Mass = coredata(transport_plan))
+
+transport_level <- transport_plan
+transport_level[,2] <- 260
+transport_end_2020 <- slice(transport_end, 1096:1461)
+transport_ts_2020 <- ts(transport_end_2020[c(2)], frequency = 365, start=c(2020,1, 1), end=c(2021,1, 1))
+transport_ts_plan <- ts(transport_plan[c(2)], frequency = 365, start=c(2020,1, 1), end=c(2021, 1, 1))
+transport_ts_level <- ts(transport_level[c(2)], frequency = 365, start=c(2020,1, 1), end=c(2021, 1, 1))
+transport_ts_2020 %>%  
+autoplot (series ="Прогнозный план требуемых 
+транспортных мощностей", size = 2) +
+    autolayer(transport_ts_plan,  series = 'Ежденевный факт', size = 2) +
+    autolayer(transport_ts_level,  series = 'Мощность собственной 
+транспортной инфраструктуры', size = 1) +
+    xlab ("Дата") +
+    ylab ("Величина совокупного спроса, тонны")
+```
+
+## Расчёт показателей:
+
+```{r warning = FALSE message = FALSE}
+missed_sales <- transport_plan[1:366,2] - transport_end_2020[,2]
+missed_sales <- sum(missed_sales[missed_sales<0])
+missed_sales <- round(missed_sales*(-1), digits = 0) ##Извлечение упущенных продаж в тоннах при использовании прогнозного плана
+
+service_fact <- sum(transport_end_2020[,2]) - missed_sales
+service_fact <- service_fact / sum(transport_end_2020[,2])
+service_fact <- round (service_fact*100, digits  = 0) ##Расчёт фактического уровня сервиса
+
+transport_done <- transport[1:9172,] %>% filter(transport[1:9172,]$`Статус заявки` == "Выполнена")
+average_income <- round(sum(transport_done[,8])/ sum(transport_done[,6]), digits = 0) ## Извлечение среднего дохода за перевозку 1 тонны груза
+average_expenses <- round(sum(transport_done[,11])/ sum(transport_done[,6]), digits = 0) ## Извлечение средних затрат за перевозку 1 тонны груза
+average_profit <- round((average_income-average_expenses), digits = 0) ## Извлечение средней прибыли за перевозку 1 тонны груза
+missed_sales_finance <- round(missed_sales * average_profit, digits = 0)  ## Расчёт упущенных продаж в рублях
+
+transport_plan1 <- transport_plan %>%
+mutate(month = format(Date, "%m"), year = format(Date, "%Y")) %>%
+group_by(month, year) %>%
+summarise(total = mean(transport.xts))
+transport_plan_cool <- transport_plan1[-2,]
+transport_plan_cool$total <- transport_plan_cool$total - 300
+transport_plan_cool[transport_plan_cool<0] <- 0
+transport_plan_final <- ceiling(transport_plan_cool$total / 20) 
+outsource_plan <- cbind (transport_final[37:48,1],transport_plan1[-2,3],transport_plan_final)
+outsource_plan$total <- round(outsource_plan$total, digits = 3)
+outsource_plan$Date <- format(outsource_plan$Date, format="%Y-%m")
+names(outsource_plan)[names(outsource_plan) == "Date"] <- "Год-месяц"
+names(outsource_plan)[names(outsource_plan) == "total"] <- "Прогнозируемый 90%-квантиль, тонны"
+names(outsource_plan)[names(outsource_plan) == "transport_plan_final"] <- "Необходимое число единиц автотранспота грузоподъёмностью в 20 т для аутсорсинга, ед."
+view(outsource_plan) ## План аутсорсинга транспортной инфраструктуры
+
+outsource_need <- transport_plan[1:366,2] - 300 ## Расчёт объёма дополнительной массы для перевозки
+
+outsource <- round(sum(ceiling(outsource_need[outsource_need>0] / 20) * 11000), digits = 0)  ## Расчёт затрат на привлечение дополнительного объёма транспорта 
+
+missed_sales_fact <- transport[(9172):nrow(transport),] %>% filter(transport[(9172):nrow(transport),]$`Статус заявки` == "Не выполнена")
+missed_sales_fact <- round(sum(missed_sales_fact[,6]), digits = 0)  ##Извлечение фактических упущенных продаж в тоннах 
+
+missed_sales_fact_finance <- round(missed_sales_fact * average_profit, digits = 0)  ## Расчёт фактических упущенных продаж в рублях
+
+SQL <- 19200 ##Цена скрипта
+
+profit <- missed_sales_fact_finance - missed_sales_finance - outsource - SQL ## Расчёт экономического эффекта
+```
+
+## Построение итоговой таблицы
+
+```{r}
+finance <- matrix(c(service_fact, missed_sales_fact, missed_sales, average_income, average_expenses, average_profit, missed_sales_fact_finance, missed_sales_finance, outsource, SQL, profit),ncol=1,byrow=TRUE)
+colnames(finance) <- c("Величина")
+rownames(finance) <- c("Фактический уровень логистического сервиса, %:", "Объём фактических упущенных продаж, тонны:","Объём упущенных продаж при использовании прогнозного плана, тонны:","Средняя вырчука за перевозку 1 тонны груза, руб./тонна:", "Средние расходы за перевозку 1 тонны груза, руб./тонна:", "Средняя прибыль за перевозку 1 тонны груза, руб./тонна:", "Объём фактических упущенных продаж, руб.:", "Объём упущенных продаж при использовании прогнозного плана, руб.:", "Затраты на привлечение дополнительного объёма транспортной инфраструктуры, руб.:", "Затраты на разработку SQL-скрипта, руб.:", "Экономический эффект использования прогнозного плана, руб.:")
+view(finance)
+```
+
+
+
+
+
+
+
+
+
+
+
