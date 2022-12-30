@@ -1,2 +1,1 @@
-Научные работы и резюме 
-Scientific papers and CVs
+Научные работы и резюме <br /> Scientific papers and CVs
