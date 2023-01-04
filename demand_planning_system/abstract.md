@@ -15,6 +15,7 @@
 затрачиваемых человеческих, финансовых и временных ресурсов, что подтверждается сформированным обоснованием 
 экономического эффекта от её внедрения в фокусное предприятие, основанным на реальных транспортных заявках 
 клиентов компании за определённый временной промежуток из её информационной системы.
+Публикация: https://www.hse.ru/edu/vkr/472929960;
 
 This paper is dedicated to the development of the planning system for demand in transport infrastructure for the industrial 
 logistics operator JSK «RT-Logistics». In pursuit of this objective there has been conducted the analysis of the economic 
@@ -34,3 +35,4 @@ planning system, which can be proven by formulated economic justification in the
 by the introduction of this solution for the selected industrial logistics operator. The economic justification is 
 based on the clients’ real transport applications that were captured by the information system during the specific 
 period of time.
+Publication: https://www.hse.ru/edu/vkr/472929960.
