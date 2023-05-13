@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/app/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/app/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/app/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/app/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/error-handler" />
+      <path value="$PROJECT_DIR$/app/vendor/composer" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/framework-bundle" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/app/vendor/symfony/routing" />
+      <path value="$PROJECT_DIR$/dist/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/dist/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/dist/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/dist/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/error-handler" />
+      <path value="$PROJECT_DIR$/dist/vendor/composer" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/routing" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/framework-bundle" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/dist/vendor/symfony/deprecation-contracts" />
+    </include_path>
+  </component>
+</project>
