@@ -1,0 +1,3 @@
+backend/python/*py linguist-language=Python
+frontend/css/*min.css linguist-language=CSS
+frontend/css/*min.js linguist-language=JavaScript

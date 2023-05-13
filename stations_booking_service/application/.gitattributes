@@ -1,0 +1,7 @@
+dist/** linguist-vendored=false
+dist/vendor/** linguist-vendored
+dist/src/templates/** linguist-vendored
+*.min.css linguist-vendored=false
+*.min.js linguist-vendored=false
+dist/**/*.min.css linguist-vendored=false
+dist/**/*.min.js linguist-vendored=false

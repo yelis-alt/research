@@ -1,0 +1,46 @@
+version: '1.4'
+
+services:
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - ./docker/nginx/conf:/etc/nginx/conf.d:ro
+            - ./dist:/var/www
+            - ./docker/nginx/log:/var/log/nginx
+        links:
+            - php
+    php:
+        build: ./docker/php
+        container_name: php
+        links:
+            - mysql
+        volumes:
+            - ./dist:/var/www:cached
+            - ./docker/php/conf.d:/usr/local/etc/php/custom.d
+    mysql:
+        image: mysql:latest
+        container_name: mysql
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./docker/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: minidelphi
+            MYSQL_DATABASE: ELECTRO
+            MYSQL_USER: arsel
+            MYSQL_PASSWORD: minidelphi
+        healthcheck:
+            test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+            timeout: 20s
+            retries: 10
+    flask:
+        build: ./docker/flask
+        container_name: flask
+        ports:
+            - "5000:5000"
+        volumes:
+            - ./dist:/var/www
