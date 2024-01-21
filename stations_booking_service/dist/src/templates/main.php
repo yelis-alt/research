@@ -259,21 +259,21 @@
             <div class = "parameter__temp-title">
                 Текущий уровень заряда аккумулятора:
             </div>
-            <input class = "parameter__temp-acc" type="number" min = "0" max ="9999" value="0">
+            <input class = "parameter__temp-acc" type="number" min = "0" max ="100" value="0">
             <div class = "parameter__temp-accg">
-                кВт-ч
+                %
             </div>
             <div class = "parameter__temp-title">
                 Заявленная ёмкость аккумулятора:
             </div>
-            <input class = "parameter__temp-maxacc" type="number" min = "0" max ="9999" value="0">
+            <input class = "parameter__temp-maxacc" type="number" min = "0" max ="999" value="0">
             <div class = "parameter__temp-maxaccg">
                 кВт-ч
             </div>
             <div class = "parameter__temp-title">
                 Заявленный расход электроэнергии на 100 км:
             </div>
-            <input class = "parameter__temp-spend" type="number" min = "0" max ="9999" value="0">
+            <input class = "parameter__temp-spend" type="number" min = "0" max ="999" value="0">
             <div class = "parameter__temp-spendg">
                 кВт-ч/км
             </div>
@@ -284,17 +284,16 @@
             Погодные условия
         </div>
         <div class="weather__temp">
+            <div class = "weather__temp-date">
+                Предполагаемая дата поездки:
+            </div>
+            <input class = "weather__temp-date-picker" id = "trip_date" type="date" value="2021-01-24"/>
             <div class = "weather__temp-title">
                 Усреднённая температура в течение дня:
             </div>
             <input class = "weather__temp-number" type="number" readonly/>
             <div class = "weather__temp-grad">
                 °C
-            </div>
-            <br>
-            <div class = "weather__temp-explanation">
-                *Расход электроэнергии и продолжительность зарядки
-                электрокара будут пересчитаны с учётом текущих погодных условий
             </div>
         </div>
     </div>

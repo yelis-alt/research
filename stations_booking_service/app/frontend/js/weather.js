@@ -388,6 +388,18 @@ $(document).ready(function() {
 
 let target = dict[$('#select-city').val()];
 
+$(".weather__temp-number").val('-15');
+let size  = $('.weather__temp-number').val().length;
+if (size === 1) {
+    $(".weather__temp input[type=number]").css('width', 15);
+}
+if (size === 2) {
+    $(".weather__temp input[type=number]").css('width', 28);
+}
+if (size === 3) {
+    $(".weather__temp input[type=number]").css('width', 38);
+}
+
 function requ() {
     $.ajax({
         method: 'POST',
@@ -397,34 +409,20 @@ function requ() {
         dataType : 'json',
         success: function(data) {
             $(".weather__temp-number").val(data);
-            let value = $('.weather__temp-number').val();
-            let size  = value.length;
-            $(".weather__temp input[type=number]").css('width',(size+2)*6);
-            if ($('.weather__temp-number').val() <= -20)
-            {
-                $('.spending__temp-number').val(20*1.3);
-            }
 
-            if (($('.weather__temp-number').val() <= -10) && ($('.weather__temp-number').val() > -20))
-            {
-                $('.spending__temp-number').val(20*1.2);
+            let size  = $('.weather__temp-number').val().length;
+            if (size === 1) {
+                $(".weather__temp input[type=number]").css('width', 15);
             }
-
-            if (($('.weather__temp-number').val() <= 0) && ($('.weather__temp-number').val() > -10))
-            {
-                $('.spending__temp-number').val(20*1.1);
+            if (size === 2) {
+                $(".weather__temp input[type=number]").css('width', 28);
             }
-            if (($('.weather__temp-number').val() <= 10) && ($('.weather__temp-number').val() > 0))
-            {
-                $('.spending__temp-number').val(20*1.05);
-            }
-            if (($('.weather__temp-number').val() > 10))
-            {
-                $('.spending__temp-number').val(20);
+            if (size === 3) {
+                $(".weather__temp input[type=number]").css('width', 38);
             }
         }
     });
-};
+}
 
 $('.city-select').on('change', function () {
     target = dict[$('#select-city').val()];
