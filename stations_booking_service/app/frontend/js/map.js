@@ -1,4 +1,6 @@
 //инициализация карты
+document.body.style.zoom = "125%";
+
 ymaps.ready(init);
 
 function coordize(desc, n, p) {
