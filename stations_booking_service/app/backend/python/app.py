@@ -24,7 +24,7 @@ def task():
               'acc': float(resp['acc']),
               'maxacc': float(resp['maxacc']),
               'spend': float(resp['spend'])}
-    jsc = resp['jsc']
+    jsc = resp['stationsList']
 
     # алгоритм Дейкстры
     class Dijkstra:
@@ -350,9 +350,9 @@ def task():
         n_exp = itera
         for n in range(itera):
             if tool == 'Алгоритм Дейкстры':
-                approach = Dijkstra(jsc, params)
+                approach = Dijkstra(stationsList, params)
             else:
-                approach = Genetic(jsc, params)
+                approach = Genetic(stationsList, params)
             now = curr_time()
             price = approach.solve(test,'cost')
             cum_dur += (curr_time() - now).total_seconds()

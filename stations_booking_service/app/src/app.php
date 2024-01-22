@@ -71,9 +71,9 @@ $routes->add('stations', new Routing\Route('/stations', [
                          charset=UTF8',
             'arsel',
             'minidelphi');
-        $jsc = quer($pdo, $request['plug'], $request['ac_dc'],
-                    $request['from_power'], $request['to_power'],
-                    $request['from_price'], $request['to_price']);
+        $jsc = quer($pdo, $request['plug'], $request['acDc'],
+                    $request['fromPower'], $request['toPower'],
+                    $request['fromPrice'], $request['toPrice']);
         return new Response($jsc);
     }
 ]));

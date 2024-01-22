@@ -37,7 +37,7 @@ $color: #005999;
   margin-top: -5px;
 }
 %underline{
-  padding-top: 16px;
+  padding-top: 15px;
   font-size: 1.5rem;
   font-family: 'DinCondMedium', 'sans-serif';
   text-align: left;
@@ -361,7 +361,7 @@ input[type=range] {
     cursor: pointer;
   }
 }
-input[type="number"] {
+#fromInput_kvt, #toInput_kvt, #fromInput_price, #toInput_price {
   color: black;
   width: 40px;
   height: 31px;
@@ -369,6 +369,7 @@ input[type="number"] {
   font-family: 'DinCondLight', 'sans-serif';
   border: none;
 }
+
 input[type=number] {
   &::-webkit-inner-spin-button {
     opacity: 1;
@@ -425,8 +426,38 @@ input[type="range"] {
   height: 0;
   z-index: 1;
 }
+.model{
+  margin-top: 17px;
+  margin-left: 50px;
+  float: left;
+  width: 630px;
+  height: 40px;
+  border: 5px solid #005999;
+  border-radius: 6%;
+  display: flex;
+  &-title {
+    margin-top: -1.5px;
+    margin-left: 10px;
+    @extend %big_title;
+    text-align: center;
+    height: 40px;
+  }
+  &-select{
+    margin-top: 2px;
+    margin-left: 2px;
+    font-size: 1.3rem;
+    font-family: "DinCondMedium","sans-serif";
+    text-align: left;
+    font-weight: 600;
+    padding-top: 2px;
+    border: solid 0.1em #000;
+    background-color: #e3e3e3;
+    height: 27px;
+  }
+}
 .parameter{
   @extend %acc;
+  margin-top: 10px;
   &-title {
     margin-top: 6.5px;
     @extend %big_title;
@@ -435,6 +466,24 @@ input[type="range"] {
     height: 40px;
     display: block;
   }
+}
+.line1{
+  width: 620px;
+  height: 60px;
+  border-bottom: 1.5px solid #000;
+  position: absolute;
+}
+.line2{
+  width: 620px;
+  height: 130px;
+  border-bottom: 1.5px solid #000;
+  position: absolute;
+}
+.line3{
+  width: 620px;
+  height: 7px;
+  border-bottom: 1.5px solid #000;
+  position: absolute;
 }
 .parameter__temp{
   flex-direction: row;
@@ -448,17 +497,13 @@ input[type="range"] {
     float: left;
     font-size: 1.5rem;
   }
-
-  &-acc, &-maxacc, &-spend{
+  &-maxacc, &-spend{
       margin-top: 17px;
       float: left;
       margin-left: 3px;
       padding-bottom: 7px;
       padding-left: 2px;
       height: 32px;
-  }
-
-  input[type=number] {
     font-size: 1.5rem;
     color: $color;
     font-family: 'DinCondMedium', 'sans-serif';
@@ -472,13 +517,33 @@ input[type="range"] {
       outline: none;
     }
   }
+  &-acc{
+    margin-top: 17px;
+    margin-left: 3px;
+    font-size: 1.3rem;
+    font-family: "DinCondMedium","sans-serif";
+    text-align: left;
+    font-weight: 600;
+    padding-top: 5px;
+    border: solid 0.1em #000;
+    background-color: #e3e3e3;
+    height: 27px;
+    width: 50px;
+    float: left;
+    &::-webkit-inner-spin-button {
+      margin-bottom: 5px;
+    }
+  }
   &-accg{
     @extend %underline;
-    width: 162.7px;
+    width: 185x;
+    color: black;
+    padding-top: 19px;
+    margin-left: 2px;
   }
   &-maxaccg{
     @extend %underline;
-    width: 206.4px;
+    width: 248.5px;
   }
   &-spendg{
     @extend %underline;
@@ -486,7 +551,7 @@ input[type="range"] {
   }
 }
 .weather{
-  margin-top: 15.5px;
+  margin-top: 10.5px;
   margin-left: 50px;
   float: left;
   width: 630px;
@@ -514,17 +579,22 @@ input[type="range"] {
     float: left;
     margin-top: 5px;
     &-picker {
-      margin-top: 14px;
+      margin-top: 15px;
       margin-left: 2px;
       font-size: 1.3rem;
       font-family: "DinCondMedium","sans-serif";
       text-align: left;
       font-weight: 600;
       width: 125px;
-      padding-top: 4px;
+      padding-top: 6px;
       border: solid 0.1em #000;
-      background-color: #dedede;
+      background-color: #e3e3e3;
       height: 27px;
+      z-index:1001;
+      &::-webkit-calendar-picker-indicator {
+        padding-bottom: 7px;
+
+      }
     }
   }
   &-title {

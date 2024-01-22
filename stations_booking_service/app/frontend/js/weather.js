@@ -388,19 +388,7 @@ $(document).ready(function() {
 
 let target = dict[$('#select-city').val()];
 
-$(".weather__temp-number").val('-15');
-let size  = $('.weather__temp-number').val().length;
-if (size === 1) {
-    $(".weather__temp input[type=number]").css('width', 15);
-}
-if (size === 2) {
-    $(".weather__temp input[type=number]").css('width', 28);
-}
-if (size === 3) {
-    $(".weather__temp input[type=number]").css('width', 38);
-}
-
-function requ() {
+function getTemperature() {
     $.ajax({
         method: 'POST',
         url: 'weather',
@@ -426,10 +414,10 @@ function requ() {
 
 $('.city-select').on('change', function () {
     target = dict[$('#select-city').val()];
-    requ();
+    getTemperature();
 });
 
 window.addEventListener('DOMContentLoaded', function() {
-    requ();
+    getTemperature();
 });
 

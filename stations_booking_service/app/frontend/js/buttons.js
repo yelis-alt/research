@@ -1,16 +1,16 @@
 let now = new Date();
-let now_day = ("0" + now.getDate()).slice(-2);
-let now_month = ("0" + (now.getMonth() + 1)).slice(-2);
-let now_date = now.getFullYear()+"-"+(now_month)+"-"+(now_day) ;
-$('#trip_date').val(now_date);
-$('#trip_date').attr({"min": now_date});
+let nowDay = ("0" + now.getDate()).slice(-2);
+let nowMonth = ("0" + (now.getMonth() + 1)).slice(-2);
+let nowDate = now.getFullYear()+"-"+(nowMonth)+"-"+(nowDay) ;
+$('#trip_date').val(nowDate);
+$('#trip_date').attr({"min": nowDate});
 
 let future = now;
-future.setDate(future.getDate()+14);
-let future_day = ("0" + future.getDate()).slice(-2);
-let future_month = ("0" + (future.getMonth() + 1)).slice(-2);
-let future_date = future.getFullYear()+"-"+(future_month)+"-"+(future_day) ;
-$('#trip_date').attr({"max": future_date});
+future.setDate(future.getDate()+10);
+let futureDay = ("0" + future.getDate()).slice(-2);
+let futureMonth = ("0" + (future.getMonth() + 1)).slice(-2);
+let futureDate = future.getFullYear()+"-"+(futureMonth)+"-"+(futureDay) ;
+$('#trip_date').attr({"max": futureDate});
 
 function preventSend(){
     $('#submit').on('submit', function(event){
@@ -18,12 +18,62 @@ function preventSend(){
     });
 }
 
+$('.weather__temp-date-picker').change(function(){
+    $(this).css('padding-top', 6);
+});
+
 $('.city-select').change(function(){
     let text = $(this).find('option:selected').text();
     let aux = $('<select/>').append($('<option/>').text(text));
     $(this).after(aux);
     $(this).width(aux.width()*1.75);
     aux.remove();
+}).change();
+
+$('.model-select').change(function(){
+    let text = $(this).find('option:selected').text();
+    let aux = $('<select/>').append($('<option/>').text(text));
+    $(this).after(aux);
+    $(this).width(aux.width()*1.15);
+    aux.remove();
+
+    if ($(this).find(":selected").val()  === "volkswagen_id_4") {
+        $('.parameter__temp-maxacc').val("77");
+        $('.parameter__temp-spend').val("17");
+    }
+    if ($(this).find(":selected").val() === "evolute-i-pro") {
+        $('.parameter__temp-maxacc').val("53");
+        $('.parameter__temp-spend').val("12.6");
+    }
+
+    let sizeMaxacc  = $('.parameter__temp-maxacc').val().length;
+    if (sizeMaxacc === 1) {
+        $(".parameter__temp-maxacc").css('width', 19);
+    }
+    if (sizeMaxacc === 2) {
+        $(".parameter__temp-maxacc").css('width', 32);
+    }
+    if (sizeMaxacc === 3) {
+        $(".parameter__temp-maxacc").css('width', 42);
+    }
+    if (sizeMaxacc === 4) {
+        $(".parameter__temp-maxacc").css('width', 45);
+    }
+    let sizeSpend  = $('.parameter__temp-spend').val().length;
+    if (sizeSpend === 1) {
+        $(".parameter__temp-spend").css('width', 19);
+    }
+
+    if (sizeSpend === 2) {
+        $(".parameter__temp-spend").css('width', 32);
+    }
+
+    if (sizeSpend === 3) {
+        $(".parameter__temp-spend").css('width', 42);
+    }
+    if (sizeSpend === 4) {
+        $(".parameter__temp-spend").css('width', 45);
+    }
 }).change();
 
 $(function(){
@@ -52,47 +102,51 @@ $('#dc').change(function(){
 });
 
 $('.parameter__temp-acc').change(function(){
-    let size_acc  = $('.parameter__temp-acc').val().length;
-    if (size_acc === 1) {
-        $(".parameter__temp-acc").css('width', 19);
+    let sizeAcc  = $('.parameter__temp-acc').val().length;
+    if (sizeAcc === 1) {
+        $(this).css('width', 30);
     }
 
-    if (size_acc === 2) {
-        $(".parameter__temp-acc").css('width', 32);
+    if (sizeAcc === 2) {
+        $(this).css('width', 40);
     }
 
-    if (size_acc === 3) {
-        $(".parameter__temp-acc").css('width', 42);
+    if (sizeAcc === 3) {
+        $(this).css('width', 50);
     }
 });
 
 $('.parameter__temp-maxacc').change(function(){
-    let size_maxacc  = $('.parameter__temp-maxacc').val().length;
-    if (size_maxacc === 1) {
-        $(".parameter__temp-maxacc").css('width', 19);
+    let sizeMaxacc  = $('.parameter__temp-maxacc').val().length;
+    if (sizeMaxacc === 1) {
+        $(this).css('width', 19);
     }
-
-    if (size_maxacc === 2) {
-        $(".parameter__temp-maxacc").css('width', 32);
+    if (sizeMaxacc === 2) {
+        $(this).css('width', 32);
     }
-
-    if (size_maxacc === 3) {
-        $(".parameter__temp-maxacc").css('width', 42);
+    if (sizeMaxacc === 3) {
+        $(this).css('width', 42);
+    }
+    if (sizeMaxacc === 4) {
+        $(this).css('width', 45);
     }
 });
 
 $('.parameter__temp-spend').change(function(){
-    let size_spend  = $('.parameter__temp-spend').val().length;
-    if (size_spend === 1) {
-        $(".parameter__temp-spend").css('width', 19);
+    let sizeSpend  = $('.parameter__temp-spend').val().length;
+    if (sizeSpend === 1) {
+        $(this).css('width', 19);
     }
 
-    if (size_spend === 2) {
-        $(".parameter__temp-spend").css('width', 32);
+    if (sizeSpend === 2) {
+        $(this).css('width', 32);
     }
 
-    if (size_spend === 3) {
-        $(".parameter__temp-spend").css('width', 42);
+    if (sizeSpend === 3) {
+        $(this).css('width', 42);
+    }
+    if (sizeSpend === 4) {
+        $(this).css('width', 45);
     }
 });
 
@@ -101,5 +155,5 @@ $('#select-city').change(function(){
     lati = centers[tar][0]
     long = centers[tar][1]
     init();
-    json_take();
+    getStations();
     })

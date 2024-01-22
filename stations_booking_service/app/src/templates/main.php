@@ -251,6 +251,15 @@
             </div>
         </div>
     </div>
+    <div class="model">
+        <div class="model-title">
+            Модель электрокара:
+        </div>
+        <select class="model-select" id="select-model" aria-label="Default select example" >
+            <option value="volkswagen_id_4" selected="selected">Volkswagen ID.4</option>
+            <option value="evolute-i-pro" selected="selected">Evolute i-PRO</option>
+        </select>
+    </div>
     <div class="parameter">
         <div class = "parameter-title">
             Технические параметры электрокара
@@ -259,21 +268,23 @@
             <div class = "parameter__temp-title">
                 Текущий уровень заряда аккумулятора:
             </div>
-            <input class = "parameter__temp-acc" type="number" min = "0" max ="100" value="0">
+            <input class = "parameter__temp-acc" type="number" min = "0" max ="100" value="100">
             <div class = "parameter__temp-accg">
                 %
             </div>
+            <div class="line1"></div>
             <div class = "parameter__temp-title">
                 Заявленная ёмкость аккумулятора:
             </div>
-            <input class = "parameter__temp-maxacc" type="number" min = "0" max ="999" value="0">
+            <input class = "parameter__temp-maxacc" type="number" min = "0" max ="999" value="0" readonly>
             <div class = "parameter__temp-maxaccg">
                 кВт-ч
             </div>
+            <div class="line2"></div>
             <div class = "parameter__temp-title">
                 Заявленный расход электроэнергии на 100 км:
             </div>
-            <input class = "parameter__temp-spend" type="number" min = "0" max ="999" value="0">
+            <input class = "parameter__temp-spend" type="number" min = "0" max ="999" value="0" readonly>
             <div class = "parameter__temp-spendg">
                 кВт-ч/км
             </div>
@@ -288,6 +299,7 @@
                 Предполагаемая дата поездки:
             </div>
             <input class = "weather__temp-date-picker" id = "trip_date" type="date" value="2021-01-24"/>
+            <div class="line3"></div>
             <div class = "weather__temp-title">
                 Усреднённая температура в течение дня:
             </div>

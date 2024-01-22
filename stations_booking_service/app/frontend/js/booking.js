@@ -4,60 +4,60 @@ function trail_null(word){
     }
     return word
 }
-function add20s(set_month, set_day, set_year,
-                set_hour, fixDate, step, resid) {
-    let next_date = new Date(fixDate +
+function add20s(setMonth, setDay, setYear,
+                setHour, fixDate, step, resid) {
+    let nextDate = new Date(fixDate +
         60000*(20*step  - resid));
-    let end_date = new Date(fixDate +
+    let endDate = new Date(fixDate +
         60000*(20*(step+1)  - resid));
-    let month = String(next_date.getUTCMonth() + 1);
-    let day = String(next_date.getUTCDate());
-    let year = String(next_date.getUTCFullYear());
-    let cHour = String(next_date.getHours());
-    let cMin = String(next_date.getMinutes());
-    let eHour = String(end_date.getHours());
-    let eMin = String(end_date.getMinutes());
-    let full_date = trail_null(day) + "." + trail_null(month) + "." +
+    let month = String(nextDate.getUTCMonth() + 1);
+    let day = String(nextDate.getUTCDate());
+    let year = String(nextDate.getUTCFullYear());
+    let cHour = String(nextDate.getHours());
+    let cMin = String(nextDate.getMinutes());
+    let eHour = String(endDate.getHours());
+    let eMin = String(endDate.getMinutes());
+    let fullDate = trail_null(day) + "." + trail_null(month) + "." +
         trail_null(year);
-    let full_time = trail_null(cHour)+ ":" + trail_null(cMin);
-    let end_time = trail_null(eHour)+ ":" + trail_null(eMin);
-    if ((Number(set_day) == Number(day)) &&
-        (Number(set_month) == Number(month)) &&
-        (Number(set_year) == Number(year)) &&
-        (Number(set_hour) > Number(cHour))){
+    let fullTime = trail_null(cHour)+ ":" + trail_null(cMin);
+    let endTime = trail_null(eHour)+ ":" + trail_null(eMin);
+    if ((Number(setDay) === Number(day)) &&
+        (Number(setMonth) === Number(month)) &&
+        (Number(setYear) === Number(year)) &&
+        (Number(setHour) > Number(cHour))){
         return '-'
     }else{
-        return full_date + ' ' + full_time + '-' + end_time
+        return fullDate + ' ' + fullTime + '-' + endTime
     }
 }
 
-function windows_set(){
+function setWindows(){
     let minut = new Date(Date.now());
     let resid = minut.getMinutes() % 20;
     let fixDate = Date.now();
     let compDate = new Date(Date.now());
-    let set_month = String(compDate.getUTCMonth() + 1);
-    let set_day = String(compDate.getUTCDate());
-    let set_year = String(compDate.getUTCFullYear());
-    let set_hour = String(compDate.getHours());
+    let setMonth = String(compDate.getUTCMonth() + 1);
+    let setDay = String(compDate.getUTCDate());
+    let setYear = String(compDate.getUTCFullYear());
+    let setHour = String(compDate.getHours());
     for (let step = 0; step<=((24*60)/20*14); step++) {
-        let d_cell = add20s(set_month, set_day, set_year,
-                            set_hour, fixDate, step, resid);
-        if (d_cell != '-') {
-            windows.push(d_cell)
+        let dCell = add20s(setMonth, setDay, setYear,
+                            setHour, fixDate, step, resid);
+        if (dCell !== '-') {
+            windows.push(dCell)
         }
     }
     windows.sort();
 }
 
-function windows_draw(){
-    $.each(Object.keys(avail_win), function(index1, value1){
-        let preindex = value1
-        $.each(avail_win[preindex], function(index2, value2){
-            let afterindex = '_' + String(preindex) +
+function drawWIndows(){
+    $.each(Object.keys(availWin), function(index1, value1){
+        let preIndex = value1
+        $.each(availWin[preIndex], function(index2, value2){
+            let afterIndex = '_' + String(preIndex) +
                              '_' + String(index2);
-            index_windows.push(afterindex);
-            let id_name = 'window' + afterindex;
+            indexWindows.push(afterIndex);
+            let id_name = 'window' + afterIndex;
 
             $('.booking__period').append('<input type="checkbox" id=' + '"' + id_name +
                 '" ' +'value=' + '" ' + value2 + '"'+ '/>');
@@ -69,13 +69,13 @@ function windows_draw(){
     });
 }
 
-function json_ids(){
+function getJsonIds(){
     let url = './schedule.json'
     fetch(url)
         .then(response => response.json())
         .then(data => {
             resp = data;
-            let list_ids = Object.keys(resp);
+            let listIds = Object.keys(resp);
             const flattenJSON = (obj = {}, res = {}, extraKey = '') => {
                 for(key in obj){
                     if(typeof obj[key] !== 'object'){
@@ -86,37 +86,37 @@ function json_ids(){
                 }
                 return res;
             };
-            let temp_schedule = flattenJSON(resp);
-            $.each(list_ids, function(index, value){
+            let tempSchedule = flattenJSON(resp);
+            $.each(listIds, function(index, value){
                 schedule[value] = [];
-                for (key in temp_schedule){
-                    let flat_id = key.split('.')[0]
-                    if (flat_id  == value){
-                        schedule[value].push(temp_schedule[key])
+                for (key in tempSchedule){
+                    let flatId = key.split('.')[0]
+                    if (flatId  === value){
+                        schedule[value].push(tempSchedule[key])
                     }
                 }
             });
         });
 }
 
-function window_filter(){
+function filterWindows(){
     $.each(ids, function(index1, value1){
-        let chan_win = windows;
+        let chanWin = windows;
         $.each(schedule[value1], function(index2, value2){
-            if ($.inArray(value2, windows) != -1){
-                chan_win = chan_win.filter(function(e){
-                    return e!=value2;
+            if ($.inArray(value2, windows) !== -1){
+                chanWin = chanWin.filter(function(e){
+                    return e!==value2;
                 });
             }
         });
-        avail_win[value1] = chan_win;
+        availWin[value1] = chanWin;
     });
 }
 
-function window_slide(){
+function slideWindows(){
     let cid = String(id.val());
-    $.each(index_windows, function(index, value){
-        if (value.split('_')[1] == cid){
+    $.each(indexWindows, function(index, value){
+        if (value.split('_')[1] === cid){
             $(cell+value).css({
                 'display': 'block'
             });
@@ -128,32 +128,32 @@ function window_slide(){
     });
 }
 
-function window_end(){
-    sub_win[login] = {};
+function endWindow(){
+    subWIn[login] = {};
     $.each(ids, function(index, value){
-        sub_win[login][value] = []
+        subWIn[login][value] = []
     });
-    $.each(index_windows, function(index, value) {
-        let check_id = input.eq(index).attr('id');
+    $.each(indexWindows, function(index, value) {
+        let checkId = input.eq(index).attr('id');
         if (input.eq(index).is(':checked')) {
-            let check_val =  $('#'+check_id).val();
-            let check_ind = check_id.split('_')[1];
-            sub_win[login][check_ind].push(check_val.slice(1));
+            let checkVal =  $('#'+checkId).val();
+            let checkInd = checkId.split('_')[1];
+            subWIn[login][checkInd].push(checkVal.slice(1));
         }
     });
     $.each(ids, function(index, value){
-        if (sub_win[login][value].length == 0) {
-            delete sub_win[login][value];
+        if (subWIn[login][value].length === 0) {
+            delete subWIn[login][value];
         }
     })
-    let key_resp = Object.keys(resp);
-    let key_sub = Object.keys(sub_win[login]);
-    $.each(key_sub, function(index, value){
-        if ($.inArray(value, key_resp) != -1){
-            resp[value][login] = sub_win[login][value];
+    let keyResp = Object.keys(resp);
+    let keySub = Object.keys(subWIn[login]);
+    $.each(keySub, function(index, value){
+        if ($.inArray(value, keyResp) !== -1){
+            resp[value][login] = subWIn[login][value];
         }else{
             resp[value] = {};
-            resp[value][login] = sub_win[login][value];
+            resp[value][login] = subWIn[login][value];
         }
     })
 }
@@ -161,23 +161,23 @@ function window_end(){
 let windows = [];
 let resp;
 let schedule = {};
-let avail_win = {};
-let index_windows = [];
-let sub_win = {}
-json_ids();
+let availWin = {};
+let indexWindows = [];
+let subWIn = {}
+getJsonIds();
 function booking_panel(){
-    windows_set();
-    window_filter();
-    windows_draw();
+    setWindows();
+    filterWindows();
+    drawWIndows();
     cell = '.booking__period-window';
     input = $('.booking__period input');
-    window_slide();
+    slideWindows();
 }
 
 let cell = '.booking';
 let input = $('.booking');
 input.change(function() {
-    $(index_windows).each(function(index, value) {
+    $(indexWindows).each(function(index, value) {
         if (input.eq(index).is(':checked')) {
             $(cell+value.toString()).css({
                 'opacity': '1',
@@ -201,58 +201,58 @@ function extender(){
     });
 }
 
-let current_id;
-let pos_id;
-let next_id;
+let currentId;
+let posId;
+let nextId;
 $('.booking__station-back').click(function(){
-    current_id = id.val();
-    pos_id = $.inArray(current_id, ids);
-    if (pos_id == 0){
-        next_id = $(ids).get(-1);
-        id.val(next_id);
+    currentId = id.val();
+    posId = $.inArray(currentId, ids);
+    if (posId === 0){
+        nextId = $(ids).get(-1);
+        id.val(nextId);
         extender();
     }
     else{
-        id.val($(ids).get(pos_id-1));
+        id.val($(ids).get(posId-1));
         extender();
     }
-    window_slide();
+    slideWindows();
 });
 
 $('.booking__station-forward').click(function(){
-    current_id = id.val();
-    pos_id = $.inArray(current_id, ids);
-    if (pos_id == $(ids).length-1){
-        next_id = $(ids).get(0);
-        id.val(next_id);
+    currentId = id.val();
+    posId = $.inArray(currentId, ids);
+    if (posId === $(ids).length-1){
+        nextId = $(ids).get(0);
+        id.val(nextId);
         extender();
     }
     else{
-        id.val($(ids).get(pos_id+1));
+        id.val($(ids).get(posId+1));
         extender();
     }
-    window_slide();
+    slideWindows();
 });
 
-function min_drop(){
-    let com_win = {}
+function dropMin(){
+    let comWin = {}
     $.each(ids, function(index, value){
-        com_win[value] = 0;
+        comWin[value] = 0;
     });
-    $.each(index_windows, function(index, value){
+    $.each(indexWindows, function(index, value){
         let idt = value.split('_')[1];
-        com_win[idt] += 1;
+        comWin[idt] += 1;
     });
-    let min_win = 100000000;
-    let min_el;
-    $.each(Object.keys(com_win), function(index, value){
-        if (com_win[value] < min_win){
-            min_win = com_win[value];
-            min_el = value;
+    let minWin = 100000000;
+    let minEl;
+    $.each(Object.keys(comWin), function(index, value){
+        if (comWin[value] < minWin){
+            minWin = comWin[value];
+            minEl = value;
         }
     });
-    let id_del = jsc.findIndex(obj => obj.id == min_el);
-    jsc.splice(id_del, 1);
+    let idDel = stationsList.findIndex(obj => obj.id === minEl);
+    stationsList.splice(idDel, 1);
 }
 
 $('#register').on('submit', function (event) {
@@ -260,10 +260,10 @@ $('#register').on('submit', function (event) {
 });
 
 $('#window_send').click(function() {
-    if ($('.booking__period input:checked').length == 0) {
+    if ($('.booking__period input:checked').length === 0) {
         alert('Выберите хотя бы одно окно брони');
     } else {
-        window_end();
+        endWindow();
         $.ajax({
             type: 'POST',
             url: 'schedule',
@@ -296,6 +296,6 @@ $('#window_repeat').click(function() {
                                 'ymaps-2-1-79-islets_map-lang-ru');
     $('.booking').hide();
     $('#map').hide();
-    min_drop();
+    dropMin();
     solution();
 });

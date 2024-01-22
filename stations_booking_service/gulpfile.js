@@ -72,6 +72,8 @@ exports.images = images;
 exports.build = build;
 exports.cleanDist = cleanDist;
 
+exports.compose = gulp.series(styles, scripts, build);
+
 exports.build = gulp.series(cleanDist, images, build);
 
 exports.watch = gulp.parallel(styles, scripts, watching);

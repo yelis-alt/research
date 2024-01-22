@@ -53,7 +53,7 @@ function init() {
 }
 
 //функции для работы с метками на карте
-let geo_obj = [];
+let geoObj = [];
 function build(ind, caption, img){
     myPlacemarkWithContent = new ymaps.Placemark([ind.lat, ind.lon], {
         balloonContent: caption
@@ -66,12 +66,12 @@ function build(ind, caption, img){
         iconContentLayout: MyIconContentLayout
     });
     myMap.geoObjects.add(myPlacemarkWithContent);
-    geo_obj.push(myPlacemarkWithContent);
+    geoObj.push(myPlacemarkWithContent);
 }
 
 function eletypize(){
     let acdc = [];
-    let electri = $('#ac_dc input[type=checkbox]:checked');
+    let electri = $('#acDc input[type=checkbox]:checked');
     for (let i = 0; i < electri.length; i++) {
         acdc.push(electri.eq(i).val());
     }
@@ -86,62 +86,62 @@ function tokize(str) {
     }
 }
 
-function map_erase(){
+function eraseMap(){
     $('.ymaps-2-1-79-map').remove();
     init();
 }
 
 //нанесение меток на карту
-let img_pos = '/frontend/images/c.png';
-let img_neg = '/frontend/images/d.png';
+let imgPos = '/frontend/images/c.png';
+let imgNeg = '/frontend/images/d.png';
 let plug = 'type2';
-let plug_path = '/frontend/images/m_type2.png';
-let ac_dc = '("ac","dc")';
-let from_power = 10;
-let to_power = 50;
-let from_price = 0;
-let to_price = 60;
-let jsc;
+let plugPath = '/frontend/images/m_type2.png';
+let acDc = '("ac","dc")';
+let fromPower = 10;
+let toPower = 50;
+let fromPrice = 0;
+let toPrice = 60;
+let stationsList;
 
-function json_take() {
-    if (geo_obj.length != 0){
-        map_erase();
+function getStations() {
+    if (geoObj.length != 0){
+        eraseMap();
     }
     $.ajax({
         type:'POST',
         url: 'stations',
         data: JSON.stringify({plug: plug,
-                                   ac_dc: ac_dc,
-                                   from_power: from_power,
-                                   to_power: to_power,
-                                   from_price: from_price,
-                                   to_price: to_price}),
+                                   ac_dc: acDc,
+                                   from_power: fromPower,
+                                   to_power: toPower,
+                                   from_price: fromPrice,
+                                   to_price: toPrice}),
         dataType : 'json',
         contentType: "application/json",
         success: function(data){
-            jsc = data;
+            stationsList = data;
             ymaps.ready(function () {
                 MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                     '<div>$[properties.iconContent]</div>'
                 );
-                $.each(jsc, function(index){
-                    let caption_pos = '№' + String(jsc[index].id) + '<br/>' +
+                $.each(stationsList, function(index){
+                    let caption_pos = '№' + String(stationsList[index].id) + '<br/>' +
                                       '---------------------------' + '<br/>' +
-                        'Адрес: ' + String(jsc[index].address) + '<br/>' +
-                        'Компания: ' + String(jsc[index].company) + '<br/>' +
-                        'Тип тока: ' + String(jsc[index].plug_type).toUpperCase() + tokize(jsc[index].plug_type) + '<br/>' +
-                        'Мощность: '+ String(jsc[index].power).toUpperCase() + " кВт" + '<br/>' +
-                        '<img src=' + '"' + plug_path + '"' + '</img>' + '<br/>' +
+                        'Адрес: ' + String(stationsList[index].address) + '<br/>' +
+                        'Компания: ' + String(stationsList[index].company) + '<br/>' +
+                        'Тип тока: ' + String(stationsList[index].plug_type).toUpperCase() + tokize(stationsList[index].plug_type) + '<br/>' +
+                        'Мощность: '+ String(stationsList[index].power).toUpperCase() + " кВт" + '<br/>' +
+                        '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                         '---------------------------' + '<br/>' +
-                        String(jsc[index].price) + ' руб. за 1 кВт';
-                    let caption_neg = '№' + String(jsc[index].id) + '<br/>' +
+                        String(stationsList[index].price) + ' руб. за 1 кВт';
+                    let caption_neg = '№' + String(stationsList[index].id) + '<br/>' +
                                       '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
-                    if (jsc[index].status == 1) {
-                        build(jsc[index], caption_pos, img_pos);
-                        build(jsc[index], caption_pos, img_pos);
+                    if (stationsList[index].status == 1) {
+                        build(stationsList[index], caption_pos, imgPos);
+                        build(stationsList[index], caption_pos, imgPos);
                     } else {
-                        build(jsc[index], caption_neg, img_neg);
-                        build(jsc[index], caption_neg, img_neg);
+                        build(stationsList[index], caption_neg, imgNeg);
+                        build(stationsList[index], caption_neg, imgNeg);
                     }
                 })
             });
@@ -150,55 +150,55 @@ function json_take() {
 }
 
 window.addEventListener('DOMContentLoaded', function() {
-    json_take();
+    getStations();
 });
 
 //изменение характеристик ЭЗС
 $('[name="charger_selector"]').click(function() {
     plug = $('input[name="charger_selector"]:checked').val();
-    plug_path = '/frontend/images/'+'m_'+plug+'.png';
-    json_take();
+    plugPath = '/frontend/images/'+'m_'+plug+'.png';
+    getStations();
 });
 
 $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
   '#fromInput_price, #toInput_price, ' +
   '#fromSlider_kvt, #toSlider_kvt, ' +
   '#fromSlider_price, #toSlider_price').on('change', function() {
-    ac_dc = '('+eletypize()+')';
-    ac_dc = ac_dc.replace('ac', '"ac"')
+    acDc = '('+eletypize()+')';
+    acDc = acDc.replace('ac', '"ac"')
                  .replace('dc','"dc"');
-    from_power = $('#fromInput_kvt').val();
-    to_power = $('#toInput_kvt').val();
-    from_price = $('#fromInput_price').val();
-    to_price = $('#toInput_price').val();
-    json_take();
+    fromPower = $('#fromInput_kvt').val();
+    toPower = $('#toInput_kvt').val();
+    fromPrice = $('#fromInput_price').val();
+    toPrice = $('#toInput_price').val();
+    getStations();
 });
 
 
-function route_id(idsi) {
-    let route_stat = [starti]
+function getRouteId(idsi) {
+    let routeStat = [starti]
     $.each(idsi, function (index, value) {
-        let idf = jsc.findIndex(obj => obj.id == value);
+        let idf = stationsList.findIndex(obj => obj.id == value);
         let next_point = {type: 'viaPoint',
-                          point: [jsc[idf].lat, jsc[idf].lon]};
+                          point: [stationsList[idf].lat, stationsList[idf].lon]};
 
-        route_stat.push(next_point);
+        routeStat.push(next_point);
     });
-    route_stat.push(finishi)
-    return route_stat
+    routeStat.push(finishi)
+    return routeStat
 }
 
 //построение оптимального маршрута
 let starti;
 let finishi;
-function booking_init(idsi) {
+function initializeBooking(idsi) {
     starti = [start.split(',')[0], start.split(',')[1]]
     finishi = [finish.split(',')[0], finish.split(',')[1]]
     let myMap = new ymaps.Map("map", {
         center: starti,
         zoom: 13
     });
-    ymaps.route(route_id(idsi), {
+    ymaps.route(getRouteId(idsi), {
         mapStateAutoApply: true
     }).then(function (route) {
         myMap.geoObjects.add(route);
@@ -215,20 +215,20 @@ function booking_init(idsi) {
             iconContentLayout: MyIconContentLayout
         }));
         $.each(ids, function (index, value){
-            let idf = jsc.findIndex(obj => obj.id == value)
+            let idf = stationsList.findIndex(obj => obj.id == value)
             MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                 '<div>$[properties.iconContent]</div>'
             );
-            let capt = '№ ' + String(jsc[idf].id) + '<br/>' +
+            let capt = '№ ' + String(stationsList[idf].id) + '<br/>' +
                 '---------------------------' + '<br/>' +
-                'Адрес: ' + String(jsc[idf].address) + '<br/>' +
-                'Компания: ' + String(jsc[idf].company) + '<br/>' +
-                'Тип тока: ' + String(jsc[idf].plug_type).toUpperCase() + tokize(jsc[idf].plug_type) + '<br/>' +
-                'Мощность: '+ String(jsc[idf].power).toUpperCase() + " кВт" + '<br/>' +
-                '<img src=' + '"' + plug_path + '"' + '</img>' + '<br/>' +
+                'Адрес: ' + String(stationsList[idf].address) + '<br/>' +
+                'Компания: ' + String(stationsList[idf].company) + '<br/>' +
+                'Тип тока: ' + String(stationsList[idf].plug_type).toUpperCase() + tokize(stationsList[idf].plug_type) + '<br/>' +
+                'Мощность: '+ String(stationsList[idf].power).toUpperCase() + " кВт" + '<br/>' +
+                '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                 '---------------------------' + '<br/>' +
-                String(jsc[idf].price) + ' руб. за 1 кВт';
-            myPlacemarkWithContent = new ymaps.Placemark([jsc[idf].lat, jsc[idf].lon], {
+                String(stationsList[idf].price) + ' руб. за 1 кВт';
+            myPlacemarkWithContent = new ymaps.Placemark([stationsList[idf].lat, stationsList[idf].lon], {
                 balloonContent: capt
             }, {
                 iconLayout: 'default#imageWithContent',
@@ -258,7 +258,7 @@ function booking_display(){
     $('#map').show();
     $('.ymaps-2-1-79-map').remove();
     let idsi = ids;
-    booking_init(idsi);
+    initializeBooking(idsi);
     $('#map').css({
         'margin-top': '5.5px',
         'height': '523px'
@@ -271,7 +271,7 @@ function booking_display(){
         'height': '518px'
     });
 }
-function map_display(){
+function displayMap(){
     setTimeout(function() {
         $('.ymaps-2-1-79-islets_icon-with-caption').remove();
         $('.ymaps-2-1-79-image').remove();
@@ -299,7 +299,7 @@ function solution(){
     let maxacc = $('.parameter__temp-maxacc').val();
     let spend = $('.parameter__temp-spend').val();
     let grad = $('.weather__temp-number').val();
-    let data = {jsc: jsc,
+    let data = {jsc: stationsList,
                 acc: acc,
                 maxacc: maxacc,
                 spend: spend,
@@ -337,7 +337,7 @@ function solution(){
                 booking_panel();
                 booking_display();
                 extender();
-                map_display();
+                displayMap();
             }
         }
     });
