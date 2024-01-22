@@ -469,15 +469,17 @@ input[type="range"] {
 }
 .line1{
   width: 620px;
-  height: 60px;
+  height: 18px;
   border-bottom: 1.5px solid #000;
   position: absolute;
+  margin-left: -10px;
 }
 .line2{
   width: 620px;
-  height: 130px;
+  height: 18px;
   border-bottom: 1.5px solid #000;
   position: absolute;
+  margin-left: -10px;
 }
 .line3{
   width: 620px;
@@ -518,7 +520,7 @@ input[type="range"] {
     }
   }
   &-acc{
-    margin-top: 17px;
+    margin-top: 15px;
     margin-left: 3px;
     font-size: 1.3rem;
     font-family: "DinCondMedium","sans-serif";
@@ -536,9 +538,8 @@ input[type="range"] {
   }
   &-accg{
     @extend %underline;
-    width: 185x;
     color: black;
-    padding-top: 19px;
+    padding-top: 15px;
     margin-left: 2px;
   }
   &-maxaccg{

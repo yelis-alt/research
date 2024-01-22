@@ -267,20 +267,20 @@
         <div class="parameter__temp">
             <div class = "parameter__temp-title">
                 Текущий уровень заряда аккумулятора:
+                <div class="line1"></div>
             </div>
             <input class = "parameter__temp-acc" type="number" min = "0" max ="100" value="100">
             <div class = "parameter__temp-accg">
                 %
             </div>
-            <div class="line1"></div>
             <div class = "parameter__temp-title">
                 Заявленная ёмкость аккумулятора:
+                <div class="line2"></div>
             </div>
             <input class = "parameter__temp-maxacc" type="number" min = "0" max ="999" value="0" readonly>
             <div class = "parameter__temp-maxaccg">
                 кВт-ч
             </div>
-            <div class="line2"></div>
             <div class = "parameter__temp-title">
                 Заявленный расход электроэнергии на 100 км:
             </div>
