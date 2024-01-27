@@ -44,10 +44,7 @@ function images() {
 }
 
 function build() {
-   return gulp.src(['app/*.php',
-                    'app/*.json',
-                    'app/src/*',
-                    'app/src/templates/main.php',
+   return gulp.src(['app/frontend/templates/main.php',
                     'app/backend/python/*.py',
                     'app/frontend/css/style.min.css',
                     'app/frontend/js/main.min.js',

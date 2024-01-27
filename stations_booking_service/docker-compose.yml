@@ -13,14 +13,14 @@ services:
             - ./docker/nginx/log:/var/log/nginx
         links:
             - php
-    php:
-        build: ./docker/php
-        container_name: php
+    java:
+        build: docker/java
+        container_name: java
         links:
             - postgres
         volumes:
             - ./app:/var/www:cached
-            - ./docker/php/conf.d:/usr/local/etc/php/custom.d
+            - ./docker/java/conf.d:/usr/local/etc/java/custom.d
     postgres:
         image: postgres:latest
         container_name: postgres

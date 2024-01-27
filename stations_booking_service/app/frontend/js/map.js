@@ -106,18 +106,18 @@ let toPrice = 60;
 let stationsList;
 
 function getStations() {
-    if (geoObj.length != 0){
+    if (geoObj.length !== 0){
         eraseMap();
     }
     $.ajax({
         type:'POST',
         url: 'stations',
         data: JSON.stringify({plug: plug,
-                                   ac_dc: acDc,
-                                   from_power: fromPower,
-                                   to_power: toPower,
-                                   from_price: fromPrice,
-                                   to_price: toPrice}),
+                                     ac_dc: acDc,
+                                     from_power: fromPower,
+                                     to_power: toPower,
+                                     from_price: fromPrice,
+                                     to_price: toPrice}),
         dataType : 'json',
         contentType: "application/json",
         success: function(data){
@@ -138,7 +138,7 @@ function getStations() {
                         String(stationsList[index].price) + ' руб. за 1 кВт';
                     let caption_neg = '№' + String(stationsList[index].id) + '<br/>' +
                                       '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
-                    if (stationsList[index].status == 1) {
+                    if (stationsList[index].status === 1) {
                         build(stationsList[index], caption_pos, imgPos);
                         build(stationsList[index], caption_pos, imgPos);
                     } else {
@@ -288,7 +288,7 @@ function displayMap(){
             });
         }
         setTimeout(function(){
-            if (ids.length == 0){
+            if (ids.length === 0){
                 alert('Для прохождения маршрута подзарядок не требуется')
             }
         }, 1000)
@@ -328,7 +328,7 @@ function solution(){
         success: function(data){
             login = Object.keys(data)[0];
             ids = data[login];
-            if (ids == 'impossible'){
+            if (ids === 'impossible'){
                 alert('К сожалению, согласно заданными Вами параметрами ' +
                     'построение маршрута невозможно.\n' +
                     'Вы можете поменять их и попробовать снова.');
