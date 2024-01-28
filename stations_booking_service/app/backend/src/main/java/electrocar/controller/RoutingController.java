@@ -1,6 +1,9 @@
 package electrocar.controller;
 
+import electrocar.dto.FilterStationDTO;
 import electrocar.dto.LocationDTO;
+import electrocar.dto.entity.Station;
+import electrocar.service.RoutingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -9,25 +12,24 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import electrocar.service.WeatherService;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/weather")
-public class WeatherController {
-    private final WeatherService weatherService;
+@RequestMapping("/routing")
+public class RoutingController {
+    private RoutingService routingService;
 
-    @GetMapping(value = "/getTemperature")
-    public Integer getTemperature(
+    @GetMapping(value = "/getFilteredStations")
+    public List<Station> getFilteredStation(
             @Valid @RequestBody
-            LocationDTO locationDTO,
-            @NotBlank
-            String date) throws IOException, ParseException {
+            FilterStationDTO filterStationDTO) {
 
-        return weatherService.getTemperature(locationDTO, date);
+        return routingService.getFilteredStations(filterStationDTO);
     }
+
 }
