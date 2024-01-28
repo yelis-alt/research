@@ -1,4 +1,4 @@
-package electrocar.service;
+package electrocar.service.weather;
 
 
 import org.apache.http.HttpEntity;
@@ -9,7 +9,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
-import electrocar.dto.LocationDTO;
+import electrocar.dto.common.LocationDTO;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -26,8 +26,8 @@ public class WeatherServiceImpl implements WeatherService {
     public Integer getTemperature(LocationDTO locationDTO,
                                   String date) throws IOException, ParseException {
 
-        String lat = locationDTO.getLatitude();
-        String lon = locationDTO.getLongitude();
+        String lat = locationDTO.getLatitude().toString();
+        String lon = locationDTO.getLongitude().toString();
 
         LocalDate dateChosen;
         try {

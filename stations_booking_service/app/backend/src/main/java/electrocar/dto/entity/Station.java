@@ -22,10 +22,10 @@ public class Station {
     private String address;
 
     @NotBlank
-    private BigDecimal latitude;
+    private Double latitude;
 
     @NotBlank
-    private BigDecimal longitude;
+    private Double longitude;
 
     private Integer price;
 

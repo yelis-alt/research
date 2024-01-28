@@ -1,6 +1,6 @@
-package electrocar.service;
+package electrocar.service.weather;
 
-import electrocar.dto.LocationDTO;
+import electrocar.dto.common.LocationDTO;
 
 import java.io.IOException;
 import java.text.ParseException;

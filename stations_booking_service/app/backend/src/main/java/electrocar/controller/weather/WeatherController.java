@@ -1,12 +1,12 @@
-package electrocar.controller;
+package electrocar.controller.weather;
 
-import electrocar.dto.LocationDTO;
+import electrocar.dto.common.LocationDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import electrocar.service.WeatherService;
+import electrocar.service.weather.WeatherService;
 
 import java.io.IOException;
 import java.text.ParseException;

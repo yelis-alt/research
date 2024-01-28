@@ -1,14 +1,17 @@
-package electrocar.dto;
+package electrocar.dto.common;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class LocationDTO {
     @NotBlank
-    private String latitude;
+    private Double longitude;
+
     @NotBlank
-    private String longitude;
+    private Double latitude;
 }

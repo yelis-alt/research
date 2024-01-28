@@ -1,4 +1,4 @@
-package electrocar.dto;
+package electrocar.dto.station;
 
 import electrocar.dto.enums.Plug;
 import electrocar.dto.enums.PlugType;

@@ -1,8 +1,10 @@
-package electrocar.controller;
+package electrocar.controller.route;
 
-import electrocar.dto.FilterStationDTO;
+import electrocar.dto.station.FilterStationDTO;
+import electrocar.dto.route.RouteOutputDTO;
+import electrocar.dto.route.RouteRequestDTO;
 import electrocar.dto.entity.Station;
-import electrocar.service.RoutingService;
+import electrocar.service.route.RoutingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,14 @@ public class RoutingController {
             FilterStationDTO filterStationDTO) {
 
         return routingService.getFilteredStations(filterStationDTO);
+    }
+
+    @GetMapping(value = "/getRoute")
+    public RouteOutputDTO getRoute(
+            @Valid @RequestBody
+            RouteRequestDTO routeRequestDTO) {
+
+        return routingService.getRoute(routeRequestDTO);
     }
 
 }
