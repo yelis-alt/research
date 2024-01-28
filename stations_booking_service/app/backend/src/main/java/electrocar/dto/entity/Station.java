@@ -31,10 +31,12 @@ public class Station {
 
     private String company;
 
+    @Enumerated(EnumType.STRING)
     private Plug plug;
 
     private Integer power;
 
+    @Enumerated(EnumType.STRING)
     private PlugType plugType;
 
     @NotBlank

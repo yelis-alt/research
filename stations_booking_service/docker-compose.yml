@@ -11,8 +11,6 @@ services:
             - ./docker/nginx/conf:/etc/nginx/conf.d:ro
             - ./app:/var/www
             - ./docker/nginx/log:/var/log/nginx
-        links:
-            - php
     java:
         build: docker/java
         container_name: java

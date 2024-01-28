@@ -1,22 +1,30 @@
 package electrocar.dto;
 
+import electrocar.dto.enums.Plug;
+import electrocar.dto.enums.PlugType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Data
 @RequiredArgsConstructor
 public class FilterStationDTO {
-    @NotBlank
-    private String plug;
-    @NotBlank
-    private String plugType;
-    @NotBlank
+    private Plug plug;
+
+    private List<PlugType> plugType;
+
+    @NotNull
     private Integer fromPower;
-    @NotBlank
+
+    @NotNull
     private Integer toPower;
-    @NotBlank
+
+    @NotNull
     private Integer fromPrice;
-    @NotBlank
+
+    @NotNull
     private Integer toPrice;
 }

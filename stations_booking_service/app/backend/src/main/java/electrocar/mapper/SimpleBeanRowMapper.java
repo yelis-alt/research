@@ -1,13 +1,21 @@
 package electrocar.mapper;
 
 import jakarta.annotation.Nonnull;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleBeanRowMapper<T> extends BeanPropertyRowMapper<T> {
     private Map<String, String> remappedFields;
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
 
     public SimpleBeanRowMapper(Class<T> clazz) {
         super(clazz);
