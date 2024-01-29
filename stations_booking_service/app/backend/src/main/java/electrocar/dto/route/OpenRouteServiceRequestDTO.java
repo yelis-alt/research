@@ -1,0 +1,26 @@
+package electrocar.dto.route;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
+public class OpenRouteServiceRequestDTO {
+
+    private List<List<Double>> coordinates;
+
+    private Boolean suppressWarnings;
+
+    private String units;
+
+    private Boolean instructions;
+
+    private String preference;
+
+    private Boolean geometry;
+}

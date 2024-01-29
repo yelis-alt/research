@@ -11,12 +11,16 @@ import java.util.List;
 @Data
 @RequiredArgsConstructor
 public class RouteRequestDTO {
-    @NotBlank
+
     private LocationDTO startCoords;
 
-    @NotBlank
     private LocationDTO finishCoords;
 
-    @NotBlank
+    private Integer accLevel;
+
+    private Double accMax;
+
+    private Double spendOpt;
+
     private List<Station> filteredStationsList;
 }
