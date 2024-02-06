@@ -1,8 +1,8 @@
 package electrocar.controller.route;
 
+import electrocar.dto.route.RouteRequestDTO;
 import electrocar.dto.station.FilterStationDTO;
 import electrocar.dto.route.RouteOutputDTO;
-import electrocar.dto.route.RouteRequestDTO;
 import electrocar.dto.entity.Station;
 import electrocar.service.route.RoutingService;
 import jakarta.validation.Valid;
@@ -33,7 +33,7 @@ public class RoutingController {
     }
 
     @GetMapping(value = "/getRoute")
-    public RouteOutputDTO getRoute(
+    public List<RouteOutputDTO> getRoute(
             @Valid @RequestBody
             RouteRequestDTO routeRequestDTO) {
 

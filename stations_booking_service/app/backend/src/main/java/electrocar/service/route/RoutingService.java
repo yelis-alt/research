@@ -1,8 +1,8 @@
 package electrocar.service.route;
 
+import electrocar.dto.route.RouteRequestDTO;
 import electrocar.dto.station.FilterStationDTO;
 import electrocar.dto.route.RouteOutputDTO;
-import electrocar.dto.route.RouteRequestDTO;
 import electrocar.dto.entity.Station;
 
 import java.util.List;
@@ -10,5 +10,5 @@ import java.util.List;
 public interface RoutingService {
     List<Station> getFilteredStations(FilterStationDTO filterStationDTO);
 
-    RouteOutputDTO getRoute(RouteRequestDTO routeRequestDTO);
+    List<RouteOutputDTO> getRoute(RouteRequestDTO routeRequestDTO);
 }

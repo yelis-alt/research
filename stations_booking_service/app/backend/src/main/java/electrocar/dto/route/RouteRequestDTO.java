@@ -22,5 +22,7 @@ public class RouteRequestDTO {
 
     private Double spendOpt;
 
+    private Double temperature;
+
     private List<Station> filteredStationsList;
 }
