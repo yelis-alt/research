@@ -1,27 +1,30 @@
 package electrocar.service.route;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import electrocar.dto.common.LocationDTO;
-import electrocar.dto.route.OpenRouteServiceRequestDTO;
-import electrocar.dto.route.RouteRequestDTO;
+import electrocar.dto.enums.PlugType;
+import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
-import electrocar.dto.route.RouteOutputDTO;
 import electrocar.dto.entity.Station;
 import electrocar.mapper.SimpleBeanRowMapper;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.Response;
+
 import lombok.RequiredArgsConstructor;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.http.*;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -32,27 +35,32 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
     private static final Logger logger = LoggerFactory.getLogger(RoutingServiceImpl.class);
-    private final static String ROUTE_REQUEST =
+    private static final  String ROUTE_REQUEST =
             "https://api.openrouteservice.org/v2/directions/driving-car";
-    private final static String ROUTE_API =
-            "5b3ce3597851110001cf6248eb51a5f80f97435cbfa27a3f642d9c19";
-    private final static ObjectMapper mapper = new ObjectMapper();
-    private final static Client client = ClientBuilder.newClient();
+    private static final String API_JSON = "api.json";
+    private static final RestTemplate restTemplate = new RestTemplate();
     private static final OpenRouteServiceRequestDTO openRouteServiceRequest =
             new OpenRouteServiceRequestDTO(new ArrayList<>(), false, "km", false, "shortest", false);
-    private final static String COST = "cost";
-    private final static String DURATION = "duration";
-    private final static String DISTANCE = "distance";
-    private final static String TRIP_DURATION = "tripDuration";
-    private final static double startNodeReachDuration = 0.0;
-    private final static double accOptCoef = 0.8;
-    private final static double accChargeTether = 0.2;
-    private final static int speed = 45;
-    private final static int price = 15;
+    private static final Gson gson = new Gson();
+    private static final String COST = "cost";
+    private static final String DURATION = "duration";
+    private static final String DISTANCE = "distance";
+    private static final String TRIP_DURATION = "tripDuration";
+    private static final String ROUTES = "routes";
+    private static final String SUMMARY = "summary";
+    private static final double startNodeReachDuration = 0.0;
+    private static final double accOptCoef = 0.8;
+    private static final double accChargeTether = 0.2;
+    private static final int speed = 45;
+    private static final int price = 15;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SimpleBeanRowMapper<Station> rowMapper =
             new SimpleBeanRowMapper<>(Station.class);
+    private final HttpHeaders routeHeaders = new HttpHeaders();
+    private final HttpHeaders fastApiHeaders = new HttpHeaders();
+
+    private String api;
 
     @Override
     public List<Station> getFilteredStations(FilterStationDTO filterStationDTO) {
@@ -80,7 +88,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     public List<RouteOutputDTO> getRoute(RouteRequestDTO routeRequestDTO) {
         double accMax = routeRequestDTO.getAccMax();
-        double accOpt = accOptCoef*accMax;
+        double accOpt = roundToTwoDecimals(accOptCoef*accMax);
         double spendOpt = routeRequestDTO.getSpendOpt();
         double temp = routeRequestDTO.getTemperature();
         double accBegin = accMax * routeRequestDTO.getAccLevel()/100;
@@ -181,10 +189,10 @@ public class RoutingServiceImpl implements RoutingService {
                                                double accOpt, double temp, boolean directRouteFlag) {
         try {
             Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish);
-            double dist = routeParams.get("distance");
-            double timeDist = routeParams.get("duration");
+            double dist = routeParams.get(DISTANCE);
+            double timeDist = routeParams.get(TRIP_DURATION);
             double spendAct = (0.005*spendOpt*(0.1*sq(temp) - 4*temp + 240))/100;
-            double accFinish = accStart  - spendAct*dist;
+            double accFinish = roundToTwoDecimals(accStart  - spendAct*dist);
 
             if (accFinish >= 0) {
                 if (directRouteFlag) {
@@ -196,6 +204,7 @@ public class RoutingServiceImpl implements RoutingService {
                                 .nextInt(1, 5 + 1) /60;
 
                         double timeCharge = 0;
+                        nodeFinish.setPlugType(PlugType.DC);
                         switch (nodeFinish.getPlugType()) {
                             case AC: {
                                 if (accFinish < accChargeTether*accMax) {
@@ -238,8 +247,7 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
-    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish)
-            throws JsonProcessingException {
+    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish) {
         double startLong = nodeStart.getLongitude();
         double startLat = nodeStart.getLatitude();
         double finishLong = nodeFinish.getLongitude();
@@ -248,27 +256,32 @@ public class RoutingServiceImpl implements RoutingService {
         openRouteServiceRequest.getCoordinates().add(List.of(startLat, startLong));
         openRouteServiceRequest.getCoordinates().add(List.of(finishLat, finishLong));
 
-        String jsonString = mapper.writeValueAsString(openRouteServiceRequest)
-                                  .replace("suppressWarnings", "suppress_warnings");
-        Entity<String> payload = Entity.json(jsonString);
-        Response response = client.target(ROUTE_REQUEST)
-                .request()
-                .header("Authorization", ROUTE_API)
-                .header("Accept", "application/json, application/geo+json, " +
-                                     "application/gpx+xml, img/png; charset=utf-8")
-                .header("Content-Type", "application/json; charset=utf-8")
-                .post(payload);
+        ResponseEntity<Object> responseEntity =
+                restTemplate.exchange(
+                        ROUTE_REQUEST,
+                        HttpMethod.POST,
+                        new HttpEntity<>(openRouteServiceRequest, routeHeaders),
+                        Object.class);
 
-        assert response.getStatus() == 200;
-        JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
-        JSONObject interMap = (JSONObject) jsonResponse.getJSONArray("routes").get(0);
-        JSONObject preFinalMap = interMap.getJSONObject("summary");
+        if (responseEntity.getStatusCode() == HttpStatus.OK) {
+            JsonObject jsonResponse = gson.toJsonTree(
+                    responseEntity.getBody()).getAsJsonObject();
+            JsonArray interMap = (JsonArray) jsonResponse.get(ROUTES);
+            JsonObject preFinalMap = interMap.get(0).getAsJsonObject()
+                    .get(SUMMARY).getAsJsonObject();
 
-        Map<String, Double> resMap = new HashMap<>();
-        resMap.put(DISTANCE, Double.parseDouble(preFinalMap.get("distance").toString()));
-        resMap.put(TRIP_DURATION, Double.parseDouble(preFinalMap.get("duration").toString())/3600);
+            Map<String, Double> resMap = new HashMap<>();
+            resMap.put(DISTANCE, roundToTwoDecimals(preFinalMap.get(DISTANCE).getAsDouble()));
+            resMap.put(TRIP_DURATION, roundToTwoDecimals(preFinalMap.get(DURATION).getAsDouble() / 3600));
 
-        return resMap;
+            return resMap;
+        } else {
+            logger.error("Unable to determine route parameters between nodes '"+
+                    nodeStart.getAddress() + "' and '" +
+                    nodeFinish.getAddress() + "' due to " + responseEntity);
+
+            return new HashMap<>();
+        }
     }
 
     public double getEuclideanDist(List<LocationDTO> coordsList) {
@@ -303,8 +316,7 @@ public class RoutingServiceImpl implements RoutingService {
         for (Station station: stationsList) {
             LocationDTO stationCoords = new LocationDTO(station.getLongitude(),
                                                         station.getLatitude());
-            //double dist = getEuclideanDist(List.of(midpoint, stationCoords));
-            double dist = 0.01;
+            double dist = getEuclideanDist(List.of(midpoint, stationCoords));
 
             if (dist <= radiusExtended) {
                 nodesFiltered.add(station);
@@ -314,11 +326,50 @@ public class RoutingServiceImpl implements RoutingService {
         return nodesFiltered;
     }
 
-    public double getTimeWaitFromRegressionModel(double temp, double accDiff) {
-        return 0.0;
+    public double getTimeWaitFromRegressionModel(double temperature, double accDiff) {
+        DcChargeDurationRequestDTO request =
+                new DcChargeDurationRequestDTO(List.of(accDiff), List.of(temperature));
+
+        ResponseEntity<DcChargeDurationOutputDTO> responseEntity =
+                restTemplate.exchange(
+                        "http://127.0.0.1:8000/routing/getDcChargeDuration",
+                        HttpMethod.POST,
+                        new HttpEntity<>(request, fastApiHeaders),
+                        DcChargeDurationOutputDTO.class);
+
+        if (responseEntity.getStatusCode() == HttpStatus.OK) {
+            return Objects.requireNonNull(
+                    responseEntity.getBody()).getTimeCharge();
+        } else {
+            throw new InternalError(
+                    "Unable to determine DC charge session duration with parameters: '" +
+                    temperature + "°C' and '" + accDiff + "kWh'");
+        }
     }
 
     public double sq(double x) {
         return x*x;
+    }
+
+    public double roundToTwoDecimals(double val) {
+        val = val*100;
+        val = Math.round(val);
+
+        return val /100;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void initHeaders() throws FileNotFoundException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(API_JSON));
+        JsonObject jsonApi = gson.fromJson(bufferedReader, JsonObject.class);
+        api = String.valueOf(jsonApi.get("open_route")).replace("\"", "");
+
+        routeHeaders.add("Authorization", api);
+        routeHeaders.add("Accept", "application/json, application/geo+json, " +
+                "application/gpx+xml, img/png; charset=utf-8");
+        routeHeaders.add("Content-Type", "application/json; charset=utf-8");
+
+        fastApiHeaders.add("Content-Type", "application/json");
+        fastApiHeaders.add("Accept", "application/json");
     }
 }

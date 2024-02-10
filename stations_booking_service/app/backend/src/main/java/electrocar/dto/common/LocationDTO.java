@@ -1,6 +1,6 @@
 package electrocar.dto.common;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +9,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class LocationDTO {
-    @NotBlank
+    @NotNull
     private Double longitude;
 
-    @NotBlank
+    @NotNull
     private Double latitude;
 }
