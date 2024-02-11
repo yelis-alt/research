@@ -219,6 +219,7 @@ public class RoutingServiceImpl implements RoutingService {
                                     timeCharge += (accOpt - accFinish)/power;
                                 }
 
+                                timeCharge = roundToTwoDecimals(timeCharge);
                                 break;
                             }
 
@@ -241,7 +242,6 @@ public class RoutingServiceImpl implements RoutingService {
                                 break;
                             }
                         }
-                        timeCharge = roundToTwoDecimals(timeCharge);
                         double duration = timeDist + timeWait + timeCharge;
                         double cost = roundToTwoDecimals(spendAct*price*(dist + speed*timeDist) +
                                                          spendAct*price*speed*(timeWait + timeCharge) +
