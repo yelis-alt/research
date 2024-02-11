@@ -16,16 +16,13 @@ import javax.persistence.*;
 @Table(name = "station", schema = "electrocar")
 public class Station {
     @Id
-    @NotBlank
     private Integer id;
 
     private String address;
 
-    @NotBlank
-    private Double latitude;
-
-    @NotBlank
     private Double longitude;
+
+    private Double latitude;
 
     private Integer price;
 

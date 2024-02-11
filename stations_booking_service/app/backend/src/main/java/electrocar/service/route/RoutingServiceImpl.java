@@ -28,6 +28,7 @@ import java.io.FileReader;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,7 +49,10 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String TRIP_DURATION = "tripDuration";
     private static final String ROUTES = "routes";
     private static final String SUMMARY = "summary";
+    private static final String START_POINT = "start point";
+    private static final String FINISH_POINT = "finish point";
     private static final double startNodeReachDuration = 0.0;
+    private static final double minEnergyDcCharge = 12.4;
     private static final double accOptCoef = 0.8;
     private static final double accChargeTether = 0.2;
     private static final int speed = 45;
@@ -59,8 +63,6 @@ public class RoutingServiceImpl implements RoutingService {
             new SimpleBeanRowMapper<>(Station.class);
     private final HttpHeaders routeHeaders = new HttpHeaders();
     private final HttpHeaders fastApiHeaders = new HttpHeaders();
-
-    private String api;
 
     @Override
     public List<Station> getFilteredStations(FilterStationDTO filterStationDTO) {
@@ -118,7 +120,6 @@ public class RoutingServiceImpl implements RoutingService {
         return new ArrayList<>();
     }
 
-
     public Map<Integer, List<Map<Integer, Map<String, Double>>>>
            getAdjacencyMatrix(RouteRequestDTO routeRequestDTO,
                               Station startPoint, Station finishPoint,
@@ -164,10 +165,12 @@ public class RoutingServiceImpl implements RoutingService {
             for (Station nodeFinish: nodesList) {
                 Integer nodeFinishId = nodeFinish.getId();
                 if (!nodeStartId.equals(nodeFinishId) &&
+                    !Objects.equals(nodeFinishId, 0) &&
                     !(nodeStartId == 0 && nodeFinishId == null)) {
+                    boolean directRouteFlag = nodeFinishId == null;
                     Map<String, Double> edgeMap =
                             getEdgeCostAndDuration(nodeStart, nodeFinish, spendOpt, accStart,
-                                                   accMax, accOpt, temp, false);
+                                                   accMax, accOpt, temp, directRouteFlag);
                     if (!edgeMap.isEmpty()) {
                         if (!matrix.containsKey(nodeStartId)) {
                             matrix.put(nodeStartId, new ArrayList<>());
@@ -188,7 +191,7 @@ public class RoutingServiceImpl implements RoutingService {
                                                double spendOpt, double accStart, double accMax,
                                                double accOpt, double temp, boolean directRouteFlag) {
         try {
-            Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish);
+            Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish, directRouteFlag);
             double dist = routeParams.get(DISTANCE);
             double timeDist = routeParams.get(TRIP_DURATION);
             double spendAct = (0.005*spendOpt*(0.1*sq(temp) - 4*temp + 240))/100;
@@ -196,15 +199,17 @@ public class RoutingServiceImpl implements RoutingService {
 
             if (accFinish >= 0) {
                 if (directRouteFlag) {
-                    return Map.of(DURATION, timeDist);
+                    Map<String, Double> directRouteMap = new HashMap<>();
+                    directRouteMap.put(COST, roundToTwoDecimals(spendAct*price*(dist + speed*timeDist)));
+                    directRouteMap.put(DURATION, timeDist);
+                    return directRouteMap;
                 } else {
                     if (accFinish < accOpt) {
                         double power = nodeFinish.getPower();
-                        double timeWait = (double) ThreadLocalRandom.current()
-                                .nextInt(1, 5 + 1) /60;
+                        double timeWait = roundToTwoDecimals((double) ThreadLocalRandom.current()
+                                .nextInt(1, 5 + 1) /60);
 
                         double timeCharge = 0;
-                        nodeFinish.setPlugType(PlugType.DC);
                         switch (nodeFinish.getPlugType()) {
                             case AC: {
                                 if (accFinish < accChargeTether*accMax) {
@@ -213,16 +218,34 @@ public class RoutingServiceImpl implements RoutingService {
                                 } else {
                                     timeCharge += (accOpt - accFinish)/power;
                                 }
+
+                                break;
                             }
+
                             case DC: {
-                                timeCharge += getTimeWaitFromRegressionModel(temp, accOpt - accFinish);
+                                double accDiff = accOpt - accFinish;
+                                if (accDiff >= minEnergyDcCharge) {
+                                    timeCharge += getTimeWaitFromRegressionModel(temp, accDiff);
+                                } else {
+                                    Map<String, String> routePointMap =
+                                            getRoutePointsMap(false, nodeStart, nodeFinish);
+
+                                    logger.error("Unable to build the route between nodes '"+
+                                            routePointMap.get(START_POINT) + "' and '" +
+                                            routePointMap.get(FINISH_POINT) + "' due to small amount of energy " +
+                                            "to be replenished by DC charging station");
+
+                                    return new HashMap<>();
+                                }
+
+                                break;
                             }
                         }
-
+                        timeCharge = roundToTwoDecimals(timeCharge);
                         double duration = timeDist + timeWait + timeCharge;
-                        double cost = spendAct*price*(dist + speed*timeDist) +
-                                spendAct*price*speed*(timeWait + timeCharge) +
-                                price*(accOpt - accFinish);
+                        double cost = roundToTwoDecimals(spendAct*price*(dist + speed*timeDist) +
+                                                         spendAct*price*speed*(timeWait + timeCharge) +
+                                                         price*(accOpt - accFinish));
 
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
@@ -239,15 +262,23 @@ public class RoutingServiceImpl implements RoutingService {
                 return new HashMap<>();
             }
         } catch (Exception E) {
+            Map<String, String> routePointMap =
+                    getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+
             logger.error("Unable to build the route between nodes '"+
-                         nodeStart.getAddress() + "' and '" +
-                         nodeFinish.getAddress() + "' due to " + E);
+                         routePointMap.get(START_POINT) + "' and '" +
+                         routePointMap.get(FINISH_POINT) + "' due to " + E);
 
             return new HashMap<>();
         }
     }
 
-    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish) {
+    public Map<String, Double> getRouteParams(Station nodeStart,
+                                              Station nodeFinish,
+                                              boolean directRouteFlag) throws InterruptedException {
+        System.out.println((nodeStart.getId() == null ? "null" : nodeStart.getId().toString()) + " || " +
+                (nodeFinish.getId() == null ? "null" : nodeFinish.getId().toString()));
+        TimeUnit.SECONDS.sleep(2);
         double startLong = nodeStart.getLongitude();
         double startLat = nodeStart.getLatitude();
         double finishLong = nodeFinish.getLongitude();
@@ -276,9 +307,12 @@ public class RoutingServiceImpl implements RoutingService {
 
             return resMap;
         } else {
-            logger.error("Unable to determine route parameters between nodes '"+
-                    nodeStart.getAddress() + "' and '" +
-                    nodeFinish.getAddress() + "' due to " + responseEntity);
+            Map<String, String> routePointMap =
+                    getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+
+            logger.error("Unable to determine route parameters between nodes '" +
+                    routePointMap.get(START_POINT) + "' and '" +
+                    routePointMap.get(FINISH_POINT) + "' due to " + responseEntity);
 
             return new HashMap<>();
         }
@@ -310,7 +344,7 @@ public class RoutingServiceImpl implements RoutingService {
     public List<Station> getStationsListFilteredByDist(List<Station> stationsList,
                                                        LocationDTO midpoint,
                                                        double diameter) {
-        double radiusExtended = diameter/2 * 1.5;
+        double radiusExtended = diameter/2 * 1.2;
 
         List<Station> nodesFiltered = new ArrayList<>();
         for (Station station: stationsList) {
@@ -347,6 +381,30 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
+    public Map<String, String> getRoutePointsMap(boolean directRouteFlag,
+                                                 Station nodeStart,
+                                                 Station nodeFinish) {
+        String addressStart;
+        String addressFinish;
+        if (directRouteFlag) {
+            if (nodeStart.getId() == null) {
+                addressStart = START_POINT;
+            } else {
+                addressStart = nodeStart.getAddress();
+            }
+            addressFinish = FINISH_POINT;
+        } else {
+            addressStart = nodeStart.getAddress();
+            addressFinish = nodeFinish.getAddress();
+        }
+
+        Map<String, String> resMap = new HashMap<>();
+        resMap.put(START_POINT, addressStart);
+        resMap.put(FINISH_POINT, addressFinish);
+
+        return resMap;
+    }
+
     public double sq(double x) {
         return x*x;
     }
@@ -362,7 +420,7 @@ public class RoutingServiceImpl implements RoutingService {
     public void initHeaders() throws FileNotFoundException {
         BufferedReader bufferedReader = new BufferedReader(new FileReader(API_JSON));
         JsonObject jsonApi = gson.fromJson(bufferedReader, JsonObject.class);
-        api = String.valueOf(jsonApi.get("open_route")).replace("\"", "");
+        String api = String.valueOf(jsonApi.get("open_route")).replace("\"", "");
 
         routeHeaders.add("Authorization", api);
         routeHeaders.add("Accept", "application/json, application/geo+json, " +

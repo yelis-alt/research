@@ -2,8 +2,8 @@ CREATE SCHEMA IF NOT EXISTS electrocar;
 CREATE TABLE IF NOT EXISTS electrocar.station(
     id BIGINT PRIMARY KEY ,
     address TEXT,
-    lat DECIMAL(10,6) NOT NULL,
-    lon DECIMAL(10,6) NOT NULL,
+    longitude DECIMAL(10,6) NOT NULL,
+    latitude DECIMAL(10,6) NOT NULL,
     price NUMERIC(4,2),
     company TEXT,
     plug TEXT,
