@@ -3,8 +3,8 @@ package electrocar.service.route;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import electrocar.dto.common.DurationDTO;
 import electrocar.dto.common.LocationDTO;
-import electrocar.dto.enums.PlugType;
 import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
 import electrocar.dto.entity.Station;
@@ -31,6 +31,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.round;
+
 @Service
 @Component
 @RequiredArgsConstructor
@@ -51,7 +53,9 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String SUMMARY = "summary";
     private static final String START_POINT = "start point";
     private static final String FINISH_POINT = "finish point";
-    private static final double startNodeReachDuration = 0.0;
+    private static final String DECIMAL_POINT = "\\.";
+    private static final double startNodeValDouble = 0.0;
+    private static final int startNodeValInt = 0;
     private static final double minEnergyDcCharge = 12.4;
     private static final double accOptCoef = 0.8;
     private static final double accChargeTether = 0.2;
@@ -88,41 +92,57 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     @Override
-    public List<RouteOutputDTO> getRoute(RouteRequestDTO routeRequestDTO) {
-        double accMax = routeRequestDTO.getAccMax();
+    public List<RouteNodeDTO> getRoute(RouteRequestDTO routeRequest) {
+        double accMax = routeRequest.getAccMax();
         double accOpt = roundToTwoDecimals(accOptCoef*accMax);
-        double spendOpt = routeRequestDTO.getSpendOpt();
-        double temp = routeRequestDTO.getTemperature();
-        double accBegin = accMax * routeRequestDTO.getAccLevel()/100;
+        double spendOpt = routeRequest.getSpendOpt();
+        double temp = routeRequest.getTemperature();
+        double accBegin = accMax * routeRequest.getAccLevel()/100;
 
         Station startPoint = new Station();
-        startPoint.setLongitude(routeRequestDTO.getStartCoords().getLongitude());
-        startPoint.setLatitude(routeRequestDTO.getStartCoords().getLatitude());
+        startPoint.setId(0);
+        startPoint.setStatus(true);
+        startPoint.setLongitude(routeRequest.getStartCoords().getLongitude());
+        startPoint.setLatitude(routeRequest.getStartCoords().getLatitude());
         Station finishPoint = new Station();
-        finishPoint.setLongitude(routeRequestDTO.getFinishCoords().getLongitude());
-        finishPoint.setLatitude(routeRequestDTO.getFinishCoords().getLatitude());
+        finishPoint.setId(Integer.MAX_VALUE);
+        finishPoint.setStatus(true);
+        finishPoint.setLongitude(routeRequest.getFinishCoords().getLongitude());
+        finishPoint.setLatitude(routeRequest.getFinishCoords().getLatitude());
 
         Map<String, Double> directRouteMap =
                 getEdgeCostAndDuration(startPoint, finishPoint, spendOpt, accBegin,
                                        accMax, accOpt, temp, true);
         if (!directRouteMap.isEmpty()) {
-            List<RouteOutputDTO> routeNodesList = new ArrayList<>();
-            routeNodesList.add(new RouteOutputDTO(startPoint, startNodeReachDuration));
-            routeNodesList.add(new RouteOutputDTO(finishPoint, directRouteMap.get(DURATION)));
+            List<RouteNodeDTO> routeNodesList = new ArrayList<>();
+            routeNodesList.add(new RouteNodeDTO(
+                    startPoint, startNodeValDouble, new DurationDTO(startNodeValInt,startNodeValInt)));
+
+            double reachDuration = directRouteMap.get(DURATION);
+            int hours = getHoursFromReachDuration(reachDuration);
+            int minutes = getMinutesFromReachDuration(reachDuration);
+            routeNodesList.add(new RouteNodeDTO(
+                    finishPoint, directRouteMap.get(DISTANCE), new DurationDTO(hours, minutes)));
 
             return routeNodesList;
         }
 
-        Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix =
-                getAdjacencyMatrix(routeRequestDTO, startPoint, finishPoint,
-                                   accBegin, accOpt, spendOpt, accMax, temp);
+        List<Station> routeRequestStaionsList = routeRequest.getFilteredStationsList();
+        routeRequestStaionsList.add(startPoint);
+        routeRequestStaionsList.add(finishPoint);
+        routeRequestStaionsList = routeRequestStaionsList.stream()
+                .sorted(Comparator.comparing(Station::getId))
+                .collect(Collectors.toList());
+        routeRequest.setFilteredStationsList(routeRequestStaionsList);
 
-        return new ArrayList<>();
+        Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix =
+                getAdjacencyMatrix(routeRequest, accBegin, accOpt, spendOpt, accMax, temp);
+
+        return getRouteWithDijkstra(adjacencyMatrix, routeRequest);
     }
 
     public Map<Integer, List<Map<Integer, Map<String, Double>>>>
            getAdjacencyMatrix(RouteRequestDTO routeRequestDTO,
-                              Station startPoint, Station finishPoint,
                               double accBegin, double accOpt, double spendOpt,
                               double accMax, double temp) {
         List<Station> stationsList = routeRequestDTO.getFilteredStationsList();
@@ -141,17 +161,10 @@ public class RoutingServiceImpl implements RoutingService {
             return new HashMap<>();
         }
 
-        startPoint.setId(0);
-        nodesList.add(startPoint);
-        nodesList = nodesList.stream()
-                .sorted(Comparator.comparing(Station::getId))
-                .collect(Collectors.toList());
-        nodesList.add(finishPoint);
-
         Map<Integer, List<Map<Integer, Map<String, Double>>>> matrix = new HashMap<>();
         for (Station nodeStart: nodesList) {
             Integer nodeStartId = nodeStart.getId();
-            if (nodeStartId == null) {
+            if (nodeStartId == Integer.MAX_VALUE) {
                 break;
             }
 
@@ -163,11 +176,11 @@ public class RoutingServiceImpl implements RoutingService {
             }
 
             for (Station nodeFinish: nodesList) {
-                Integer nodeFinishId = nodeFinish.getId();
+                int nodeFinishId = nodeFinish.getId();
                 if (!nodeStartId.equals(nodeFinishId) &&
                     !Objects.equals(nodeFinishId, 0) &&
-                    !(nodeStartId == 0 && nodeFinishId == null)) {
-                    boolean directRouteFlag = nodeFinishId == null;
+                    !(nodeStartId == 0 && nodeFinishId == Integer.MAX_VALUE)) {
+                    boolean directRouteFlag = nodeFinishId == Integer.MAX_VALUE;
                     Map<String, Double> edgeMap =
                             getEdgeCostAndDuration(nodeStart, nodeFinish, spendOpt, accStart,
                                                    accMax, accOpt, temp, directRouteFlag);
@@ -201,13 +214,15 @@ public class RoutingServiceImpl implements RoutingService {
                 if (directRouteFlag) {
                     Map<String, Double> directRouteMap = new HashMap<>();
                     directRouteMap.put(COST, roundToTwoDecimals(spendAct*price*(dist + speed*timeDist)));
+                    directRouteMap.put(DISTANCE, dist);
                     directRouteMap.put(DURATION, timeDist);
+
                     return directRouteMap;
                 } else {
                     if (accFinish < accOpt) {
                         double power = nodeFinish.getPower();
-                        double timeWait = roundToTwoDecimals((double) ThreadLocalRandom.current()
-                                .nextInt(1, 5 + 1) /60);
+                        double timeWait = (double) ThreadLocalRandom.current()
+                                .nextInt(1, 5 + 1) /60;
 
                         double timeCharge = 0;
                         switch (nodeFinish.getPlugType()) {
@@ -219,7 +234,6 @@ public class RoutingServiceImpl implements RoutingService {
                                     timeCharge += (accOpt - accFinish)/power;
                                 }
 
-                                timeCharge = roundToTwoDecimals(timeCharge);
                                 break;
                             }
 
@@ -242,13 +256,14 @@ public class RoutingServiceImpl implements RoutingService {
                                 break;
                             }
                         }
-                        double duration = timeDist + timeWait + timeCharge;
+                        double duration = roundToTwoDecimals(timeDist + timeWait + timeCharge);
                         double cost = roundToTwoDecimals(spendAct*price*(dist + speed*timeDist) +
                                                          spendAct*price*speed*(timeWait + timeCharge) +
                                                          price*(accOpt - accFinish));
 
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
+                        edgeMap.put(DISTANCE, dist);
                         edgeMap.put(DURATION, duration);
 
                         return edgeMap;
@@ -387,7 +402,7 @@ public class RoutingServiceImpl implements RoutingService {
         String addressStart;
         String addressFinish;
         if (directRouteFlag) {
-            if (nodeStart.getId() == null) {
+            if (nodeStart.getId() == 0) {
                 addressStart = START_POINT;
             } else {
                 addressStart = nodeStart.getAddress();
@@ -405,15 +420,124 @@ public class RoutingServiceImpl implements RoutingService {
         return resMap;
     }
 
+    public List<RouteNodeDTO> getRouteWithDijkstra(
+            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix,
+            RouteRequestDTO routeRequest) {
+
+        Map<Integer, Double> routeMap = new HashMap<>();
+        Map<Integer, Integer> connectMap = new HashMap<>();
+        List<Integer> queue = new ArrayList<>();
+        for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>>
+                entry: adjacencyMatrix.entrySet()) {
+            int entryId = entry.getKey();
+            if (entryId == 0){
+                routeMap.put(entryId, startNodeValDouble);
+            } else {
+                routeMap.put(entryId, Double.MAX_VALUE);
+            }
+            connectMap.put(entryId,  null);
+            queue.add(entryId);
+        }
+
+        List<Integer> pathIdsList = new ArrayList<>();
+        routeMap.put(Integer.MAX_VALUE, Double.MAX_VALUE);
+        while (!queue.isEmpty()) {
+           int keyMin = queue.get(0);
+           double valMin = routeMap.get(keyMin);
+
+           for (int pos = 0; pos < queue.size(); pos++) {
+               if (routeMap.get(queue.get(pos)) < valMin) {
+                   keyMin = queue.get(pos);
+                   valMin = routeMap.get(keyMin);
+               }
+
+               int currentNodeId = keyMin;
+               queue.removeIf(id -> Objects.equals(id, currentNodeId));
+
+               for (Map<Integer, Map<String, Double>> nextNodeMap:
+                       adjacencyMatrix.get(currentNodeId)) {
+                   int nextNodeMapId = nextNodeMap.keySet().iterator().next();
+                   double routeCost = nextNodeMap.values().iterator().next().get(COST) +
+                           routeMap.get(currentNodeId);
+                   if (routeMap.get(nextNodeMapId) > routeCost) {
+                       routeMap.put(nextNodeMapId, routeCost);
+                       connectMap.put(nextNodeMapId, currentNodeId);
+                   }
+               }
+           }
+        }
+
+        Integer finishId = Integer.MAX_VALUE;
+        pathIdsList.add(finishId);
+        while (true) {
+            finishId = connectMap.get(finishId);
+            if (finishId == null) {
+                break;
+            }
+
+            pathIdsList.add(finishId);
+        }
+        Collections.reverse(pathIdsList);
+
+        double reachDurationCumm = 0.0;
+        double distanceCumm = 0.0;
+        int previousId = 0;
+        List<RouteNodeDTO> routeNodesList = new ArrayList<>();
+        for (Station station: routeRequest.getFilteredStationsList()) {
+            int stationId = station.getId();
+            if (pathIdsList.contains(stationId)) {
+                RouteNodeDTO routeNode = new RouteNodeDTO();
+                routeNode.setRouteNode(station);
+
+                if (stationId != 0) {
+                    Map<Integer, Map<String, Double>> edgeMap = adjacencyMatrix.get(previousId).stream()
+                            .filter(stMap -> stMap.keySet().iterator().next() == stationId).toList().get(0);
+                    distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
+                    reachDurationCumm += edgeMap.values().iterator().next().get(DURATION);
+                    Integer hours = getHoursFromReachDuration(reachDurationCumm);
+                    Integer minutes = getMinutesFromReachDuration(reachDurationCumm);
+
+                    routeNode.setDistance(distanceCumm);
+                    routeNode.setReachDuration(new DurationDTO(hours, minutes));
+                } else {
+                    routeNode.setDistance(startNodeValDouble);
+                    routeNode.setReachDuration(new DurationDTO(startNodeValInt, startNodeValInt));
+                }
+
+                previousId = stationId;
+                routeNodesList.add(routeNode);
+            }
+        }
+
+        return routeNodesList;
+    }
+
+    public int getHoursFromReachDuration(double reachDuration) {
+        String beforeDecimalPartString = String.valueOf(reachDuration).split(DECIMAL_POINT)[0];
+
+        return Integer.parseInt(beforeDecimalPartString);
+    }
+
+    public int getMinutesFromReachDuration(double reachDuration) {
+        String afterDecimalPartString = String.valueOf(reachDuration).split(DECIMAL_POINT)[1];
+        if (afterDecimalPartString.length() == 1) {
+            afterDecimalPartString += "0";
+        }
+        afterDecimalPartString = afterDecimalPartString.substring(0,2);
+        double minutesDouble = round(Double.parseDouble(afterDecimalPartString)/100*60);
+
+        return Integer.parseInt(String.valueOf(minutesDouble).split(DECIMAL_POINT)[0]);
+    }
+
     public double sq(double x) {
         return x*x;
     }
 
     public double roundToTwoDecimals(double val) {
         val = val*100;
-        val = Math.round(val);
+        val = round(val);
 
-        return val /100;
+        return val/100;
     }
 
     @EventListener(ApplicationReadyEvent.class)
