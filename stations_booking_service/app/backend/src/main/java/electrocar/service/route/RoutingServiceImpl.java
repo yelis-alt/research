@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import electrocar.dto.common.DurationDTO;
 import electrocar.dto.common.LocationDTO;
+import electrocar.dto.evolution.GenerationDTO;
 import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
 import electrocar.dto.entity.Station;
@@ -38,8 +39,7 @@ import static java.lang.Math.round;
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
     private static final Logger logger = LoggerFactory.getLogger(RoutingServiceImpl.class);
-    private static final  String ROUTE_REQUEST =
-            "https://api.openrouteservice.org/v2/directions/driving-car";
+    private static final String ROUTE_REQUEST = "https://api.openrouteservice.org/v2/directions/driving-car";
     private static final String API_JSON = "api.json";
     private static final RestTemplate restTemplate = new RestTemplate();
     private static final OpenRouteServiceRequestDTO openRouteServiceRequest =
@@ -61,6 +61,8 @@ public class RoutingServiceImpl implements RoutingService {
     private static final double accChargeTether = 0.2;
     private static final int speed = 45;
     private static final int price = 15;
+    private static final int genSuccessRep = 10;
+    private static final int genRep = 10000;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SimpleBeanRowMapper<Station> rowMapper =
@@ -139,6 +141,8 @@ public class RoutingServiceImpl implements RoutingService {
                 getAdjacencyMatrix(routeRequest, accBegin, accOpt, spendOpt, accMax, temp);
 
         return getRouteWithDijkstra(adjacencyMatrix, routeRequest);
+
+        //return getRouteWithEvolution(adjacencyMatrix, routeRequest);
     }
 
     public Map<Integer, List<Map<Integer, Map<String, Double>>>>
@@ -339,10 +343,7 @@ public class RoutingServiceImpl implements RoutingService {
         double secondX = coordsList.get(1).getLongitude();
         double secondY = coordsList.get(1).getLatitude();
 
-        double deltaX = firstX - secondX;
-        double deltaY = firstY - secondY;
-
-        return Math.sqrt(sq(deltaX) + sq(deltaY));
+        return Math.sqrt(sq(firstX - secondX) + sq(firstY - secondY));
     }
 
     public LocationDTO getMidpoint(LocationDTO firstPoint,
@@ -479,6 +480,111 @@ public class RoutingServiceImpl implements RoutingService {
         }
         Collections.reverse(pathIdsList);
 
+        return getRouteNodesDromIdsList(adjacencyMatrix, pathIdsList, routeRequest);
+    }
+
+    public List<RouteNodeDTO> getRouteWithEvolution(
+            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix,
+            RouteRequestDTO routeRequest) {
+
+        GenerationDTO ancestor =
+                new GenerationDTO(new HashMap<>(), new ArrayList<>());
+        for (Station station: routeRequest.getFilteredStationsList()) {
+            int stationId = station.getId();
+            if (stationId == 0 || stationId == Integer.MAX_VALUE) {
+                ancestor.getDnaMap().put(stationId, 1);
+            } else {
+                ancestor.getDnaMap().put(stationId, 0);
+            }
+        }
+
+        int rep = 0;
+        int success = 0;
+        double minCost = Double.MAX_VALUE;
+        List<Integer> bestPathIdsList = new ArrayList<>();
+        while (success < genSuccessRep) {
+            rep ++;
+
+            if (rep > genRep) {
+                if (success == 0) {
+                    return new ArrayList<>();
+                }
+            }
+
+            int randOperator = ThreadLocalRandom.current()
+                    .nextInt(0, 2 + 1);
+
+            GenerationDTO parent;
+            if (rep == 1) {
+                parent = ancestor;
+            }
+
+            GenerationDTO child = new GenerationDTO();
+            switch(randOperator) {
+                case 0: {
+                    child = getMutation(parent);
+                    break;
+                }
+                case 1: {
+                    child = getCrossover(parent);
+                    break;
+                }
+                case 2: {
+                    child = getMutation(parent);
+                    child = getCrossover(child);
+                    break;
+                }
+            }
+
+            List<Integer> pathIdsList = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry: child.getDnaMap().entrySet()) {
+                if (entry.getValue() == 1) {
+                    pathIdsList.add(entry.getKey());
+                }
+            }
+
+            double routeCost = 0;
+            boolean failureFlag = false;
+            Set<Integer> currentNodeIdsSet = adjacencyMatrix.keySet();
+            for (int i = 0; i < pathIdsList.size()-1; i++) {
+                int currentNodeId = pathIdsList.get(i);
+
+                if (currentNodeIdsSet.contains(currentNodeId)) {
+                    List<Map<Integer, Map<String, Double>>> nextNodesList =
+                            adjacencyMatrix.get(currentNodeId);
+                    int nextNodeId = pathIdsList.get(i + 1);
+                    List<Map<Integer, Map<String, Double>>> nextNodesListFilter =
+                            nextNodesList.stream().filter(node ->
+                                    Objects.equals(node.keySet().iterator().next(), nextNodeId)).toList();
+
+                    if (nextNodesListFilter.isEmpty()) {
+                        failureFlag = true;
+                        break;
+                    } else {
+                        routeCost += nextNodesListFilter.get(0).values().iterator().next().get(COST);
+                    }
+                } else {
+                    failureFlag = true;
+                    break;
+                }
+            }
+
+            if (!failureFlag && routeCost < minCost) {
+                minCost = routeCost;
+                bestPathIdsList = pathIdsList;
+                success ++;
+            }
+
+            parent = child;
+        }
+
+        return getRouteNodesDromIdsList(adjacencyMatrix, bestPathIdsList, routeRequest);
+    }
+
+    public List<RouteNodeDTO> getRouteNodesDromIdsList(
+            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix,
+            List<Integer> pathIdsList,
+            RouteRequestDTO routeRequest) {
         double reachDurationCumm = 0.0;
         double distanceCumm = 0.0;
         int previousId = 0;
