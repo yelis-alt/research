@@ -1,4 +1,4 @@
-version: '1.4'
+version: '3'
 
 services:
     nginx:
@@ -8,25 +8,25 @@ services:
             - '80:80'
             - '443:443'
         volumes:
-            - ./docker/nginx/conf:/etc/nginx/conf.d:ro
-            - ./app:/var/www
-            - ./docker/nginx/log:/var/log/nginx
+            - ./frontend/nginx/log:/var/log/nginx
     java:
-        build: docker/java
+        build: backend_java
         container_name: java
-        links:
-            - postgres
         volumes:
             - ./app:/var/www:cached
-            - ./docker/java/conf.d:/usr/local/etc/java/custom.d
+    python:
+        build: backend_python
+        container_name: python
+        volumes:
+          - ./app:/var/www:cached
     postgres:
         image: postgres:latest
         container_name: postgres
         ports:
             - "5433:5432"
         volumes:
-            - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-            - ./docker/postgres:/var/lib/postgres
+            - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./postgres:/var/lib/postgres
         environment:
             POSTGRES_DB: electrocar_dev
             POSTGRES_USER: delphi
@@ -35,10 +35,3 @@ services:
             test: [ "CMD", "ping", "-h", "localhost" ]
             timeout: 20s
             retries: 10
-    flask:
-        build: ./docker/flask
-        container_name: flask
-        ports:
-            - "5000:5000"
-        volumes:
-            - ./app:/var/www
