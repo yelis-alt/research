@@ -522,16 +522,16 @@ public class RoutingServiceImpl implements RoutingService {
             GenerationDTO child = new GenerationDTO();
             switch(randOperator) {
                 case 0: {
-                    child = getMutation(parent);
+                    //child = getMutation(parent);
                     break;
                 }
                 case 1: {
-                    child = getCrossover(parent);
+                    //child = getCrossover(parent);
                     break;
                 }
                 case 2: {
-                    child = getMutation(parent);
-                    child = getCrossover(child);
+                    //child = getMutation(parent);
+                   //child = getCrossover(child);
                     break;
                 }
             }
