@@ -21,8 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/routing")
 public class RoutingController {
-    @Autowired
-    private RoutingService routingService;
+    private final RoutingService routingService;
 
     @GetMapping(value = "/getFilteredStations")
     public List<Station> getFilteredStation(
@@ -39,5 +38,4 @@ public class RoutingController {
 
         return routingService.getRoute(routeRequestDTO);
     }
-
 }

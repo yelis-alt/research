@@ -285,6 +285,9 @@ INSERT INTO electrocar.station VALUES(269, 'г. Чита, ул. Маршала �
 CREATE TABLE IF NOT EXISTS electrocar.schedule(
     id BIGSERIAL PRIMARY KEY,
     code CHAR(8) NOT NULL,
+    id_station INTEGER NOT NULL
+        CONSTRAINT schedule_fk
+        REFERENCES electrocar.station(id),
     datetime_from TIMESTAMP NOT NULL,
     datetime_to TIMESTAMP NOT NULL
 );

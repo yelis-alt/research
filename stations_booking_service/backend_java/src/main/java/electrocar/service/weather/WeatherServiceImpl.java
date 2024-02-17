@@ -2,7 +2,6 @@ package electrocar.service.weather;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import electrocar.dto.temperature.TemperatureOutputDTO;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpEntity;
 import org.apache.http.ParseException;
@@ -23,6 +22,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,13 +38,13 @@ public class WeatherServiceImpl implements WeatherService {
     private String api;
 
     @Override
-    public TemperatureOutputDTO getTemperature(LocationDTO locationDTO, String date)
+    public List<Double> getTemperature(LocationDTO locationDTO, String date)
             throws ParseException, IOException {
 
         String lat = locationDTO.getLatitude().toString();
         String lon = locationDTO.getLongitude().toString();
 
-        DateTimeFormatter pattern = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter pattern = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         LocalDate dateChosen = LocalDate.parse(date, pattern);
         long dayLimit = ChronoUnit.DAYS.between(LocalDate.now() , dateChosen) + 1;
 
@@ -63,7 +63,7 @@ public class WeatherServiceImpl implements WeatherService {
                                        .getAsJsonObject().get(PARTS).getAsJsonObject().get(DAY)
                                        .getAsJsonObject().get(TEMP_AVG).getAsDouble();
 
-            return new TemperatureOutputDTO(tempAvg);
+            return List.of(tempAvg);
         } else {
 
             throw new InternalError(

@@ -3,13 +3,13 @@ package electrocar.service.route;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import electrocar.dao.StationDao;
 import electrocar.dto.common.DurationDTO;
 import electrocar.dto.common.LocationDTO;
 import electrocar.dto.evolution.GenerationDTO;
 import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
 import electrocar.dto.entity.Station;
-import electrocar.mapper.SimpleBeanRowMapper;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -17,9 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.*;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -34,7 +31,6 @@ import java.util.stream.Collectors;
 import static java.lang.Math.round;
 
 @Service
-@Component
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
     private static final Logger logger = LoggerFactory.getLogger(RoutingServiceImpl.class);
@@ -51,6 +47,7 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String TRIP_DURATION = "tripDuration";
     private static final String ROUTES = "routes";
     private static final String SUMMARY = "summary";
+    private static final String CHARGE_DURATION = "chargeDuration";
     private static final String START_POINT = "start point";
     private static final String FINISH_POINT = "finish point";
     private static final String DECIMAL_POINT = "\\.";
@@ -64,43 +61,25 @@ public class RoutingServiceImpl implements RoutingService {
     private static final int genSuccessRep = 5;
     private static final int genRep = 1000;
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final SimpleBeanRowMapper<Station> rowMapper =
-            new SimpleBeanRowMapper<>(Station.class);
     private final HttpHeaders routeHeaders = new HttpHeaders();
     private final HttpHeaders fastApiHeaders = new HttpHeaders();
+    private final StationDao stationDao;
 
     @Override
-    public List<Station> getFilteredStations(FilterStationDTO filterStationDTO) {
-
-        String sql = """
-                     SELECT * FROM electrocar.station
-                     WHERE (plug=:plug OR plug IS NULL) AND
-                           (plug_type IN (:plugType) OR plug_type IS NULL) AND
-                           ((power>=:fromPower AND power<=:toPower) OR power IS NULL) AND
-                           ((price>=:fromPrice AND price<=:toPrice) OR price IS NULL)
-                     """;
-
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("plug", filterStationDTO.getPlug().toString());
-        params.addValue("plugType", filterStationDTO.getPlugType().stream()
-                                                              .map(Enum::toString).toList());
-        params.addValue("fromPower", filterStationDTO.getFromPower());
-        params.addValue("toPower", filterStationDTO.getToPower());
-        params.addValue("fromPrice", filterStationDTO.getFromPrice());
-        params.addValue("toPrice", filterStationDTO.getToPrice());
-
-        return jdbcTemplate.query(sql, params, rowMapper);
+    public List<Station> getFilteredStations(FilterStationDTO filterStation) {
+        return stationDao.getFilteredStations(filterStation);
     }
 
     @Override
     public List<RouteNodeDTO> getRoute(RouteRequestDTO routeRequest) {
+        // define route parameters
         double accMax = routeRequest.getAccMax();
         double accOpt = roundToTwoDecimals(accOptCoef*accMax);
         double spendOpt = routeRequest.getSpendOpt();
         double temp = routeRequest.getTemperature();
         double accBegin = accMax * routeRequest.getAccLevel()/100;
 
+        // try to build direct route between start point and finish point
         Station startPoint = new Station();
         startPoint.setId(0);
         startPoint.setStatus(true);
@@ -119,18 +98,22 @@ public class RoutingServiceImpl implements RoutingService {
             List<RouteNodeDTO> routeNodesList = new ArrayList<>();
             routeNodesList.add(new RouteNodeDTO(
                     startPoint, startNodeValDouble, startNodeValDouble,
+                    new DurationDTO(startNodeValInt,startNodeValInt),
                     new DurationDTO(startNodeValInt,startNodeValInt)));
 
             double reachDuration = directRouteMap.get(DURATION);
-            int hours = getHoursFromReachDuration(reachDuration);
+            int hours = getHoursFromDuration(reachDuration);
             int minutes = getMinutesFromReachDuration(reachDuration);
             routeNodesList.add(new RouteNodeDTO(
                     finishPoint, directRouteMap.get(DISTANCE),
-                    directRouteMap.get(COST), new DurationDTO(hours, minutes)));
+                    directRouteMap.get(COST),
+                    new DurationDTO(startNodeValInt,startNodeValInt),
+                    new DurationDTO(hours, minutes)));
 
             return routeNodesList;
         }
 
+        // build adjacency matrix
         List<Station> routeRequestStaionsList = routeRequest.getFilteredStationsList();
         routeRequestStaionsList.add(startPoint);
         routeRequestStaionsList.add(finishPoint);
@@ -142,8 +125,10 @@ public class RoutingServiceImpl implements RoutingService {
         Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix =
                 getAdjacencyMatrix(routeRequest, accBegin, accOpt, spendOpt, accMax, temp);
 
+        // apply Dijkstra's algorithm for adjacency matrix
         return getRouteWithDijkstra(adjacencyMatrix, routeRequest);
 
+        // apply genetic algorithms for adjacency matrix
         //return getRouteWithEvolution(adjacencyMatrix, routeRequest);
     }
 
@@ -261,6 +246,7 @@ public class RoutingServiceImpl implements RoutingService {
                                 break;
                             }
                         }
+                        timeCharge = roundToTwoDecimals(timeCharge);
                         double duration = roundToTwoDecimals(timeDist + timeWait + timeCharge);
                         double cost = roundToTwoDecimals(spendAct*price*(dist + speed*timeDist) +
                                                          spendAct*price*speed*(timeWait + timeCharge) +
@@ -269,6 +255,7 @@ public class RoutingServiceImpl implements RoutingService {
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
                         edgeMap.put(DISTANCE, dist);
+                        edgeMap.put(CHARGE_DURATION, timeCharge);
                         edgeMap.put(DURATION, duration);
 
                         return edgeMap;
@@ -296,8 +283,9 @@ public class RoutingServiceImpl implements RoutingService {
     public Map<String, Double> getRouteParams(Station nodeStart,
                                               Station nodeFinish,
                                               boolean directRouteFlag) throws InterruptedException {
-        System.out.println((nodeStart.getId() == null ? "null" : nodeStart.getId().toString()) + " || " +
-                (nodeFinish.getId() == null ? "null" : nodeFinish.getId().toString()));
+        Map<String, String> routePointMap =
+                getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+        logger.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));
         TimeUnit.SECONDS.sleep(2);
         double startLong = nodeStart.getLongitude();
         double startLat = nodeStart.getLatitude();
@@ -327,9 +315,6 @@ public class RoutingServiceImpl implements RoutingService {
 
             return resMap;
         } else {
-            Map<String, String> routePointMap =
-                    getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
-
             logger.error("Unable to determine route parameters between nodes '" +
                     routePointMap.get(START_POINT) + "' and '" +
                     routePointMap.get(FINISH_POINT) + "' due to " + responseEntity);
@@ -658,15 +643,21 @@ public class RoutingServiceImpl implements RoutingService {
                     distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
                     costCumm += roundToTwoDecimals(edgeMap.values().iterator().next().get(COST));
                     reachDurationCumm += edgeMap.values().iterator().next().get(DURATION);
-                    Integer hours = getHoursFromReachDuration(reachDurationCumm);
+                    double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
+
+                    Integer hoursCharge = getHoursFromDuration(chargeDuration);
+                    Integer minutesCharge = getMinutesFromReachDuration(chargeDuration);
+                    Integer hours = getHoursFromDuration(reachDurationCumm);
                     Integer minutes = getMinutesFromReachDuration(reachDurationCumm);
 
                     routeNode.setDistance(distanceCumm);
                     routeNode.setCost(costCumm);
+                    routeNode.setChargeDuration(new DurationDTO(hoursCharge, minutesCharge));
                     routeNode.setReachDuration(new DurationDTO(hours, minutes));
                 } else {
                     routeNode.setDistance(startNodeValDouble);
                     routeNode.setCost(startNodeValDouble);
+                    routeNode.setChargeDuration(new DurationDTO(startNodeValInt, startNodeValInt));
                     routeNode.setReachDuration(new DurationDTO(startNodeValInt, startNodeValInt));
                 }
 
@@ -678,7 +669,7 @@ public class RoutingServiceImpl implements RoutingService {
         return routeNodesList;
     }
 
-    public int getHoursFromReachDuration(double reachDuration) {
+    public int getHoursFromDuration(double reachDuration) {
         String beforeDecimalPartString = String.valueOf(reachDuration).split(DECIMAL_POINT)[0];
 
         return Integer.parseInt(beforeDecimalPartString);

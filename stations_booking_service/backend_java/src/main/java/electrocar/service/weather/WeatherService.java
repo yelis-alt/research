@@ -1,12 +1,12 @@
 package electrocar.service.weather;
 
 import electrocar.dto.common.LocationDTO;
-import electrocar.dto.temperature.TemperatureOutputDTO;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 public interface WeatherService {
-    TemperatureOutputDTO getTemperature(LocationDTO locationDTO, String date)
+    List<Double> getTemperature(LocationDTO locationDTO, String date)
             throws IOException, ParseException;
 }

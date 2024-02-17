@@ -1,7 +1,6 @@
 package electrocar.controller.weather;
 
 import electrocar.dto.common.LocationDTO;
-import electrocar.dto.temperature.TemperatureOutputDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +10,7 @@ import electrocar.service.weather.WeatherService;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 @Validated
 @RestController
@@ -20,7 +20,7 @@ public class WeatherController {
     private final WeatherService weatherService;
 
     @GetMapping(value = "/getTemperature")
-    public TemperatureOutputDTO getTemperature(
+    public List<Double> getTemperature(
             @Valid @RequestBody
             LocationDTO locationDTO,
             @NotBlank @RequestParam

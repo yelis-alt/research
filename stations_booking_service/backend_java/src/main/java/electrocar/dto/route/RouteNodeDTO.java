@@ -16,5 +16,7 @@ public class RouteNodeDTO {
 
     private Double cost;
 
+    private DurationDTO chargeDuration;
+
     private DurationDTO reachDuration;
 }
