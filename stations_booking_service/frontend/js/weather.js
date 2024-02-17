@@ -78,7 +78,7 @@ let capitals = {
                 "Республика Ингушетия": "Магас",
                 "Кабардино — Балкарская Республика": "Нальчик",
                 "Карачаево — Черкесская Республика": "Черкесск",
-                "Республика Северная Осетия-Алания": "Владивкавказ",
+                "Республика Северная Осетия-Алания": "Владикавказ",
                 "Ставропольский край": "Ставрополь",
                 "Чеченская Республика": "Грозный"
 }
@@ -223,44 +223,42 @@ let centers =  {"Майкоп": [44.6098268, 40.1006606],
                 "Салехард": [66.5492077, 66.6085318],
                 "Ярославль": [57.6215477, 39.8977411]}
 
-let lati;
-let long;
 $(document).ready(function() {
     $('#loading').hide();
     $('#booking').hide();
     if (YMaps.location)
     {
-        lati = YMaps.location.latitude;
-        long = YMaps.location.longitude;
-        cita = YMaps.location.city;
-        obl = YMaps.location.region;
+        let lati = YMaps.location.latitude;
+        let long = YMaps.location.longitude;
+        let cita = YMaps.location.city;
+        let obl = YMaps.location.region;
         if (dict[$('#select-city').val(cita)] > 0) {
             $('#select-city').val(cita);
         }
         else {
-            cap = capitals[obl];
+            let cap = capitals[obl];
             $('#select-city').val(cap);
         }
+        getTemperature(lati, long, getDateString(new Date()));
     }
     else
         alert("Пожалуйста, разрешите доступ к использованию Вашей геопозиции!");
 });
 
-let target = dict[$('#select-city').val()];
-
-function getTemperature() {
+function getTemperature(longitude, latitude, dateRef) {
     $.ajax({
         method: 'GET',
         url: 'weather/getTemperature',
         data: JSON.stringify(
             {location: {
-                               longitude: long,
-                               latitude: lati}
+                               longitude: longitude,
+                               latitude: latitude},
+                    date: dateRef
                    }),
         contentType: 'application/json',
         dataType : 'json',
         success: function(data) {
-            $(".weather__temp-number").val(data);
+            $(".weather__temp-number").val(data[0]);
 
             let size  = $('.weather__temp-number').val().length;
             if (size === 1) {
@@ -277,11 +275,14 @@ function getTemperature() {
 }
 
 $('.city-select').on('change', function () {
-    target = dict[$('#select-city').val()];
-    getTemperature();
+    let centersList = centers[$('#select-city').val()];
+    getTemperature(centersList[0], centersList[1],
+                   getDateString($('#trip_date').val()));
 });
 
-window.addEventListener('DOMContentLoaded', function() {
-    getTemperature();
-});
+function getDateString(dateRaw) {
+    return dateRaw.getFullYear().toString() + "-" +
+        dateRaw.getMonth() + "-" +
+        dateRaw.getDate();
+}
 

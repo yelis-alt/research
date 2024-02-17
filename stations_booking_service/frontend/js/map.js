@@ -57,7 +57,7 @@ function init() {
 //функции для работы с метками на карте
 let geoObj = [];
 function build(ind, caption, img){
-    myPlacemarkWithContent = new ymaps.Placemark([ind.lat, ind.lon], {
+    myPlacemarkWithContent = new ymaps.Placemark([ind.latitude, ind.longitude], {
         balloonContent: caption
     }, {
         iconLayout: 'default#imageWithContent',
@@ -73,7 +73,7 @@ function build(ind, caption, img){
 
 function eletypize(){
     let acdc = [];
-    let electri = $('#acDc input[type=checkbox]:checked');
+    let electri = $('#plugType input[type=checkbox]:checked');
     for (let i = 0; i < electri.length; i++) {
         acdc.push(electri.eq(i).val());
     }
@@ -81,7 +81,7 @@ function eletypize(){
 }
 
 function tokize(str) {
-    if (str == 'ac') {
+    if (str === 'AC') {
         return ' (Переменный ток)';
     } else {
         return ' (Постоянный ток)';
@@ -96,9 +96,9 @@ function eraseMap(){
 //нанесение меток на карту
 let imgPos = '/frontend/images/c.png';
 let imgNeg = '/frontend/images/d.png';
-let plug = 'type2';
+let plug = 'TYPE_2';
 let plugPath = '/frontend/images/m_type2.png';
-let acDc = '("ac","dc")';
+let plugType = ["AC", "DC"];
 let fromPower = 10;
 let toPower = 50;
 let fromPrice = 0;
@@ -108,20 +108,18 @@ let stationsList;
 function getStations() {
     if (geoObj.length !== 0){
         eraseMap();
-    }
     $.ajax({
-        type:'POST',
-        url: 'stations',
+        type:'GET',
+        url: 'routing/getFilteredStationsList',
         data: JSON.stringify({plug: plug,
-                                     ac_dc: acDc,
-                                     from_power: fromPower,
-                                     to_power: toPower,
-                                     from_price: fromPrice,
-                                     to_price: toPrice}),
+                                     plugType: plugType,
+                                     fromPower: fromPower,
+                                     toPower: toPower,
+                                     fromPrice: fromPrice,
+                                     toPrice: toPrice}),
         dataType : 'json',
         contentType: "application/json",
-        success: function(data){
-            stationsList = data;
+        success: function(stationsList){
             ymaps.ready(function () {
                 MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                     '<div>$[properties.iconContent]</div>'
@@ -166,9 +164,9 @@ $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
   '#fromInput_price, #toInput_price, ' +
   '#fromSlider_kvt, #toSlider_kvt, ' +
   '#fromSlider_price, #toSlider_price').on('change', function() {
-    acDc = '('+eletypize()+')';
-    acDc = acDc.replace('ac', '"ac"')
-                 .replace('dc','"dc"');
+    plugType = '('+eletypize()+')';
+    plugType = plugType.replace('AC', '"AC"')
+                 .replace('DC','"DC"');
     fromPower = $('#fromInput_kvt').val();
     toPower = $('#toInput_kvt').val();
     fromPrice = $('#fromInput_price').val();
@@ -180,9 +178,9 @@ $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
 function getRouteId(idsi) {
     let routeStat = [starti]
     $.each(idsi, function (index, value) {
-        let idf = stationsList.findIndex(obj => obj.id == value);
+        let idf = stationsList.findIndex(obj => obj.id === value);
         let next_point = {type: 'viaPoint',
-                          point: [stationsList[idf].lat, stationsList[idf].lon]};
+                          point: [stationsList[idf].latitude, stationsList[idf].longitude]};
 
         routeStat.push(next_point);
     });
@@ -217,7 +215,7 @@ function initializeBooking(idsi) {
             iconContentLayout: MyIconContentLayout
         }));
         $.each(ids, function (index, value){
-            let idf = stationsList.findIndex(obj => obj.id == value)
+            let idf = stationsList.findIndex(obj => obj.id === value)
             MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                 '<div>$[properties.iconContent]</div>'
             );
@@ -225,12 +223,12 @@ function initializeBooking(idsi) {
                 '---------------------------' + '<br/>' +
                 'Адрес: ' + String(stationsList[idf].address) + '<br/>' +
                 'Компания: ' + String(stationsList[idf].company) + '<br/>' +
-                'Тип тока: ' + String(stationsList[idf].plug_type).toUpperCase() + tokize(stationsList[idf].plug_type) + '<br/>' +
+                'Тип тока: ' + String(stationsList[idf].plugType).toUpperCase() + tokize(stationsList[idf].plugType) + '<br/>' +
                 'Мощность: '+ String(stationsList[idf].power).toUpperCase() + " кВт" + '<br/>' +
                 '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                 '---------------------------' + '<br/>' +
                 String(stationsList[idf].price) + ' руб. за 1 кВт';
-            myPlacemarkWithContent = new ymaps.Placemark([stationsList[idf].lat, stationsList[idf].lon], {
+            myPlacemarkWithContent = new ymaps.Placemark([stationsList[idf].latitude, stationsList[idf].longitude], {
                 balloonContent: capt
             }, {
                 iconLayout: 'default#imageWithContent',
@@ -371,4 +369,4 @@ $('#ok').click(function(){
 
 $('#window_repeat').click(function(){
 
-})
+})}

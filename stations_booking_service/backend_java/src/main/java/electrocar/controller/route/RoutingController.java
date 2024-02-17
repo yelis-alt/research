@@ -21,10 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoutingController {
     private final RoutingService routingService;
 
-    @GetMapping(value = "/getFilteredStations")
-    public List<Station> getFilteredStation(@Valid @RequestBody FilterStationDTO filterStationDTO) {
+    @GetMapping(value = "/getFilteredStationsList")
+    public List<Station> getFilteredStationsList(@Valid @RequestBody FilterStationDTO filterStation) {
 
-        return routingService.getFilteredStations(filterStationDTO);
+        return routingService.getFilteredStationsList(filterStation);
     }
 
     @GetMapping(value = "/getRoute")

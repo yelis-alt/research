@@ -7,7 +7,7 @@ import electrocar.dto.station.FilterStationDTO;
 import java.util.List;
 
 public interface RoutingService {
-    List<Station> getFilteredStations(FilterStationDTO filterStationDTO);
+    List<Station> getFilteredStationsList(FilterStationDTO filterStationDTO);
 
     List<RouteNodeDTO> getRoute(RouteRequestDTO routeRequestDTO);
 }

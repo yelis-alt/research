@@ -64,7 +64,7 @@ public class RoutingServiceImpl implements RoutingService {
     private final StationDao stationDao;
 
     @Override
-    public List<Station> getFilteredStations(FilterStationDTO filterStation) {
+    public List<Station> getFilteredStationsList(FilterStationDTO filterStation) {
         return stationDao.getFilteredStations(filterStation);
     }
 
