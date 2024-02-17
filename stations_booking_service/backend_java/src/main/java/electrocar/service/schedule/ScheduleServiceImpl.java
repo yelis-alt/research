@@ -55,7 +55,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         int hourTo = schedule.getDatetimeTo().atZone(ZoneOffset.UTC).getHour();
         int minuteTo = schedule.getDatetimeTo().atZone(ZoneOffset.UTC).getMinute();
 
-        return dateString + " "
+        return dateString
+                + " "
                 + addTrailingZero(hourFrom)
                 + ":"
                 + addTrailingZero(minuteFrom)

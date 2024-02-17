@@ -239,11 +239,12 @@ public class RoutingServiceImpl implements RoutingService {
                                 } else {
                                     Map<String, String> routePointMap = getRoutePointsMap(false, nodeStart, nodeFinish);
 
-                                    logger.error(
-                                            "Unable to build the route between nodes '" + routePointMap.get(START_POINT)
-                                                    + "' and '" + routePointMap.get(FINISH_POINT)
-                                                    + "' due to small amount of energy "
-                                                    + "to be replenished by DC charging station");
+                                    logger.error("Unable to build the route between nodes '"
+                                            + routePointMap.get(START_POINT)
+                                            + "' and '"
+                                            + routePointMap.get(FINISH_POINT)
+                                            + "' due to small amount of energy "
+                                            + "to be replenished by DC charging station");
 
                                     return new HashMap<>();
                                 }
@@ -276,9 +277,12 @@ public class RoutingServiceImpl implements RoutingService {
         } catch (Exception E) {
             Map<String, String> routePointMap = getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
 
-            logger.error("Unable to build the route between nodes '" + routePointMap.get(START_POINT)
-                    + "' and '" + routePointMap.get(FINISH_POINT)
-                    + "' due to " + E);
+            logger.error("Unable to build the route between nodes '"
+                    + routePointMap.get(START_POINT)
+                    + "' and '"
+                    + routePointMap.get(FINISH_POINT)
+                    + "' due to "
+                    + E);
 
             return new HashMap<>();
         }
@@ -313,9 +317,12 @@ public class RoutingServiceImpl implements RoutingService {
 
             return resMap;
         } else {
-            logger.error("Unable to determine route parameters between nodes '" + routePointMap.get(START_POINT)
-                    + "' and '" + routePointMap.get(FINISH_POINT)
-                    + "' due to " + responseEntity);
+            logger.error("Unable to determine route parameters between nodes '"
+                    + routePointMap.get(START_POINT)
+                    + "' and '"
+                    + routePointMap.get(FINISH_POINT)
+                    + "' due to "
+                    + responseEntity);
 
             return new HashMap<>();
         }
@@ -368,8 +375,11 @@ public class RoutingServiceImpl implements RoutingService {
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
             return Objects.requireNonNull(responseEntity.getBody()).getTimeCharge();
         } else {
-            throw new InternalError("Unable to determine DC charge session duration with parameters: '" + temperature
-                    + "°C' and '" + accDiff + "kWh'");
+            throw new InternalError("Unable to determine DC charge session duration with parameters: '"
+                    + temperature
+                    + "°C' and '"
+                    + accDiff
+                    + "kWh'");
         }
     }
 
