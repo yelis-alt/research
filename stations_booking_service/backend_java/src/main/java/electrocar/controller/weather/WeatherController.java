@@ -1,9 +1,8 @@
 package electrocar.controller.weather;
 
-import electrocar.dto.common.LocationDTO;
+import electrocar.dto.weather.WeatherRequestDTO;
 import electrocar.service.weather.WeatherService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
@@ -19,9 +18,9 @@ public class WeatherController {
     private final WeatherService weatherService;
 
     @GetMapping(value = "/getTemperature")
-    public List<Double> getTemperature(@Valid @RequestBody LocationDTO location, @NotBlank @RequestParam String date)
+    public List<Double> getTemperature(@Valid @RequestBody WeatherRequestDTO weatherRequest)
             throws IOException, ParseException {
 
-        return weatherService.getTemperature(location, date);
+        return weatherService.getTemperature(weatherRequest);
     }
 }

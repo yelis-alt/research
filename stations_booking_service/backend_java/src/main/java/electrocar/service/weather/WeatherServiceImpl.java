@@ -2,7 +2,7 @@ package electrocar.service.weather;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import electrocar.dto.common.LocationDTO;
+import electrocar.dto.weather.WeatherRequestDTO;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -37,13 +37,12 @@ public class WeatherServiceImpl implements WeatherService {
     private String api;
 
     @Override
-    public List<Double> getTemperature(LocationDTO locationDTO, String date) throws ParseException, IOException {
-
-        String lat = locationDTO.getLatitude().toString();
-        String lon = locationDTO.getLongitude().toString();
+    public List<Double> getTemperature(WeatherRequestDTO weatherRequest) throws ParseException, IOException {
+        String lat = weatherRequest.getLocation().getLatitude().toString();
+        String lon = weatherRequest.getLocation().getLongitude().toString();
 
         DateTimeFormatter pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate dateChosen = LocalDate.parse(date, pattern);
+        LocalDate dateChosen = LocalDate.parse(weatherRequest.getDate(), pattern);
         long dayLimit = ChronoUnit.DAYS.between(LocalDate.now(), dateChosen) + 1;
 
         String url = BASE_URL + "?lat=" + lat + "&lon=" + lon + "&limit=" + dayLimit;
@@ -71,7 +70,8 @@ public class WeatherServiceImpl implements WeatherService {
             return List.of(tempAvg);
         } else {
 
-            throw new InternalError("Unable to determine temperature for this location on " + date.replace("/", "."));
+            throw new InternalError("Unable to determine temperature for this location on "
+                    + weatherRequest.getDate().replace("-", "."));
         }
     }
 
