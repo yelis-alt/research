@@ -2,19 +2,7 @@ package electrocar.service.weather;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import lombok.RequiredArgsConstructor;
-import org.apache.http.HttpEntity;
-import org.apache.http.ParseException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import electrocar.dto.common.LocationDTO;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -23,6 +11,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.apache.http.HttpEntity;
+import org.apache.http.ParseException;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -38,15 +37,14 @@ public class WeatherServiceImpl implements WeatherService {
     private String api;
 
     @Override
-    public List<Double> getTemperature(LocationDTO locationDTO, String date)
-            throws ParseException, IOException {
+    public List<Double> getTemperature(LocationDTO locationDTO, String date) throws ParseException, IOException {
 
         String lat = locationDTO.getLatitude().toString();
         String lon = locationDTO.getLongitude().toString();
 
-        DateTimeFormatter pattern = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        DateTimeFormatter pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate dateChosen = LocalDate.parse(date, pattern);
-        long dayLimit = ChronoUnit.DAYS.between(LocalDate.now() , dateChosen) + 1;
+        long dayLimit = ChronoUnit.DAYS.between(LocalDate.now(), dateChosen) + 1;
 
         String url = BASE_URL + "?lat=" + lat + "&lon=" + lon + "&limit=" + dayLimit;
         HttpGet httpGet = new HttpGet(url);
@@ -59,16 +57,21 @@ public class WeatherServiceImpl implements WeatherService {
             HttpEntity httpEntity = response.getEntity();
             String responseString = EntityUtils.toString(httpEntity, "UTF-8");
             JsonObject responseJson = gson.fromJson(responseString, JsonObject.class);
-            Double tempAvg = responseJson.getAsJsonArray(FORECASTS).get((int) dayLimit - 1)
-                                       .getAsJsonObject().get(PARTS).getAsJsonObject().get(DAY)
-                                       .getAsJsonObject().get(TEMP_AVG).getAsDouble();
+            Double tempAvg = responseJson
+                    .getAsJsonArray(FORECASTS)
+                    .get((int) dayLimit - 1)
+                    .getAsJsonObject()
+                    .get(PARTS)
+                    .getAsJsonObject()
+                    .get(DAY)
+                    .getAsJsonObject()
+                    .get(TEMP_AVG)
+                    .getAsDouble();
 
             return List.of(tempAvg);
         } else {
 
-            throw new InternalError(
-                    "Unable to determine temperature for this location on " +
-                            date.replace("/", "."));
+            throw new InternalError("Unable to determine temperature for this location on " + date.replace("/", "."));
         }
     }
 
@@ -78,6 +81,4 @@ public class WeatherServiceImpl implements WeatherService {
         JsonObject jsonApi = gson.fromJson(bufferedReader, JsonObject.class);
         api = String.valueOf(jsonApi.get("yandex_weather")).replace("\"", "");
     }
-
-
 }

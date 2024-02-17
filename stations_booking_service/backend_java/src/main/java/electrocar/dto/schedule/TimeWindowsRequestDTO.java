@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class WindowsRequestDTO {
+public class TimeWindowsRequestDTO {
     private String date;
 
     private Integer stationId;

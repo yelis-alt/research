@@ -1,11 +1,10 @@
 package electrocar.dto.evolution;
 
+import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.Map;
 
 @Data
 @RequiredArgsConstructor

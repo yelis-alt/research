@@ -1,11 +1,11 @@
 package electrocar.service.schedule;
 
-import electrocar.dto.schedule.WindowsRequestDTO;
-
+import electrocar.dto.schedule.TimeWindowsRequestDTO;
+import electrocar.dto.schedule.TimeWindowsSaveRequestDTO;
 import java.util.List;
 
 public interface ScheduleService {
-    List<String> getScheduleWindows(WindowsRequestDTO windowsRequest);
+    List<String> getTimeWindows(TimeWindowsRequestDTO timeWindowsRequest);
 
-    void postScheduleWindows(List<String> windowsList);
+    void saveTimeWindows(TimeWindowsSaveRequestDTO timeWindowsSaveRequest);
 }

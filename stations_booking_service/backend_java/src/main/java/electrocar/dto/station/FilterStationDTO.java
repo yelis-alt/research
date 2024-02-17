@@ -2,12 +2,10 @@ package electrocar.dto.station;
 
 import electrocar.dto.enums.Plug;
 import electrocar.dto.enums.PlugType;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @Data
 @RequiredArgsConstructor

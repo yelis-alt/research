@@ -1,14 +1,13 @@
 package electrocar.controller.schedule;
 
-import electrocar.dto.schedule.WindowsRequestDTO;
+import electrocar.dto.schedule.TimeWindowsRequestDTO;
+import electrocar.dto.schedule.TimeWindowsSaveRequestDTO;
 import electrocar.service.schedule.ScheduleService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Validated
 @RestController
@@ -17,19 +16,15 @@ import java.util.List;
 public class ScheduleController {
     private final ScheduleService scheduleService;
 
-    @GetMapping(value = "/getScheduleWindows")
-    public List<String> getScheduleWindows(
-            @Valid @RequestBody
-            WindowsRequestDTO windowsRequest) {
+    @GetMapping(value = "/getTimeWindows")
+    public List<String> getTimeWindows(@Valid @RequestBody TimeWindowsRequestDTO timeWindowsRequest) {
 
-        return scheduleService.getScheduleWindows(windowsRequest);
+        return scheduleService.getTimeWindows(timeWindowsRequest);
     }
 
-    @PostMapping(value = "/postScheduleWindows")
-    public void postScheduleWindows(
-            @Valid @RequestBody
-            List<String> windowsList) {
+    @PostMapping(value = "/saveTimeWindows")
+    public void saveTimeWindows(@Valid @RequestBody TimeWindowsSaveRequestDTO timeWindowsSaveRequest) {
 
-        scheduleService.postScheduleWindows(windowsList);
+        scheduleService.saveTimeWindows(timeWindowsSaveRequest);
     }
 }

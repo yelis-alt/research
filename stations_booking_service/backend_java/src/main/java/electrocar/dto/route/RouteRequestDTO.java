@@ -1,12 +1,10 @@
 package electrocar.dto.route;
 
-import electrocar.dto.entity.Station;
 import electrocar.dto.common.LocationDTO;
-import jakarta.validation.constraints.NotBlank;
+import electrocar.dto.entity.Station;
+import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @Data
 @RequiredArgsConstructor

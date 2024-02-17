@@ -1,16 +1,24 @@
 package electrocar.service.route;
 
+import static java.lang.Math.round;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import electrocar.dao.StationDao;
 import electrocar.dto.common.DurationDTO;
 import electrocar.dto.common.LocationDTO;
+import electrocar.dto.entity.Station;
 import electrocar.dto.evolution.GenerationDTO;
 import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
-import electrocar.dto.entity.Station;
-
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,16 +27,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static java.lang.Math.round;
 
 @Service
 @RequiredArgsConstructor
@@ -74,10 +72,10 @@ public class RoutingServiceImpl implements RoutingService {
     public List<RouteNodeDTO> getRoute(RouteRequestDTO routeRequest) {
         // define route parameters
         double accMax = routeRequest.getAccMax();
-        double accOpt = roundToTwoDecimals(accOptCoef*accMax);
+        double accOpt = roundToTwoDecimals(accOptCoef * accMax);
         double spendOpt = routeRequest.getSpendOpt();
         double temp = routeRequest.getTemperature();
-        double accBegin = accMax * routeRequest.getAccLevel()/100;
+        double accBegin = accMax * routeRequest.getAccLevel() / 100;
 
         // try to build direct route between start point and finish point
         Station startPoint = new Station();
@@ -92,22 +90,24 @@ public class RoutingServiceImpl implements RoutingService {
         finishPoint.setLatitude(routeRequest.getFinishCoords().getLatitude());
 
         Map<String, Double> directRouteMap =
-                getEdgeCostAndDuration(startPoint, finishPoint, spendOpt, accBegin,
-                                       accMax, accOpt, temp, true);
+                getEdgeCostAndDuration(startPoint, finishPoint, spendOpt, accBegin, accMax, accOpt, temp, true);
         if (!directRouteMap.isEmpty()) {
             List<RouteNodeDTO> routeNodesList = new ArrayList<>();
             routeNodesList.add(new RouteNodeDTO(
-                    startPoint, startNodeValDouble, startNodeValDouble,
-                    new DurationDTO(startNodeValInt,startNodeValInt),
-                    new DurationDTO(startNodeValInt,startNodeValInt)));
+                    startPoint,
+                    startNodeValDouble,
+                    startNodeValDouble,
+                    new DurationDTO(startNodeValInt, startNodeValInt),
+                    new DurationDTO(startNodeValInt, startNodeValInt)));
 
             double reachDuration = directRouteMap.get(DURATION);
             int hours = getHoursFromDuration(reachDuration);
             int minutes = getMinutesFromReachDuration(reachDuration);
             routeNodesList.add(new RouteNodeDTO(
-                    finishPoint, directRouteMap.get(DISTANCE),
+                    finishPoint,
+                    directRouteMap.get(DISTANCE),
                     directRouteMap.get(COST),
-                    new DurationDTO(startNodeValInt,startNodeValInt),
+                    new DurationDTO(startNodeValInt, startNodeValInt),
                     new DurationDTO(hours, minutes)));
 
             return routeNodesList;
@@ -129,31 +129,31 @@ public class RoutingServiceImpl implements RoutingService {
         return getRouteWithDijkstra(adjacencyMatrix, routeRequest);
 
         // apply genetic algorithms for adjacency matrix
-        //return getRouteWithEvolution(adjacencyMatrix, routeRequest);
+        // return getRouteWithEvolution(adjacencyMatrix, routeRequest);
     }
 
-    public Map<Integer, List<Map<Integer, Map<String, Double>>>>
-           getAdjacencyMatrix(RouteRequestDTO routeRequestDTO,
-                              double accBegin, double accOpt, double spendOpt,
-                              double accMax, double temp) {
+    public Map<Integer, List<Map<Integer, Map<String, Double>>>> getAdjacencyMatrix(
+            RouteRequestDTO routeRequestDTO,
+            double accBegin,
+            double accOpt,
+            double spendOpt,
+            double accMax,
+            double temp) {
         List<Station> stationsList = routeRequestDTO.getFilteredStationsList();
-        List<Station> nodesListRaw = stationsList.stream()
-                                                 .filter(Station::getStatus)
-                                                 .toList();
+        List<Station> nodesListRaw =
+                stationsList.stream().filter(Station::getStatus).toList();
 
         LocationDTO startCoords = routeRequestDTO.getStartCoords();
         LocationDTO finishCoords = routeRequestDTO.getFinishCoords();
         double diameter = getEuclideanDist(List.of(startCoords, finishCoords));
         LocationDTO midpoint = getMidpoint(startCoords, finishCoords);
-        List<Station> nodesList = getStationsListFilteredByDist(nodesListRaw,
-                                                                midpoint,
-                                                                diameter);
+        List<Station> nodesList = getStationsListFilteredByDist(nodesListRaw, midpoint, diameter);
         if (nodesList.isEmpty()) {
             return new HashMap<>();
         }
 
         Map<Integer, List<Map<Integer, Map<String, Double>>>> matrix = new HashMap<>();
-        for (Station nodeStart: nodesList) {
+        for (Station nodeStart : nodesList) {
             Integer nodeStartId = nodeStart.getId();
             if (nodeStartId == Integer.MAX_VALUE) {
                 break;
@@ -166,15 +166,14 @@ public class RoutingServiceImpl implements RoutingService {
                 accStart = accOpt;
             }
 
-            for (Station nodeFinish: nodesList) {
+            for (Station nodeFinish : nodesList) {
                 int nodeFinishId = nodeFinish.getId();
-                if (!nodeStartId.equals(nodeFinishId) &&
-                    !Objects.equals(nodeFinishId, 0) &&
-                    !(nodeStartId == 0 && nodeFinishId == Integer.MAX_VALUE)) {
+                if (!nodeStartId.equals(nodeFinishId)
+                        && !Objects.equals(nodeFinishId, 0)
+                        && !(nodeStartId == 0 && nodeFinishId == Integer.MAX_VALUE)) {
                     boolean directRouteFlag = nodeFinishId == Integer.MAX_VALUE;
-                    Map<String, Double> edgeMap =
-                            getEdgeCostAndDuration(nodeStart, nodeFinish, spendOpt, accStart,
-                                                   accMax, accOpt, temp, directRouteFlag);
+                    Map<String, Double> edgeMap = getEdgeCostAndDuration(
+                            nodeStart, nodeFinish, spendOpt, accStart, accMax, accOpt, temp, directRouteFlag);
                     if (!edgeMap.isEmpty()) {
                         if (!matrix.containsKey(nodeStartId)) {
                             matrix.put(nodeStartId, new ArrayList<>());
@@ -191,20 +190,26 @@ public class RoutingServiceImpl implements RoutingService {
         return matrix;
     }
 
-    Map<String, Double> getEdgeCostAndDuration(Station nodeStart, Station nodeFinish,
-                                               double spendOpt, double accStart, double accMax,
-                                               double accOpt, double temp, boolean directRouteFlag) {
+    Map<String, Double> getEdgeCostAndDuration(
+            Station nodeStart,
+            Station nodeFinish,
+            double spendOpt,
+            double accStart,
+            double accMax,
+            double accOpt,
+            double temp,
+            boolean directRouteFlag) {
         try {
             Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish, directRouteFlag);
             double dist = routeParams.get(DISTANCE);
             double timeDist = routeParams.get(TRIP_DURATION);
-            double spendAct = (0.005*spendOpt*(0.1*sq(temp) - 4*temp + 240))/100;
-            double accFinish = roundToTwoDecimals(accStart  - spendAct*dist);
+            double spendAct = (0.005 * spendOpt * (0.1 * sq(temp) - 4 * temp + 240)) / 100;
+            double accFinish = roundToTwoDecimals(accStart - spendAct * dist);
 
             if (accFinish >= 0) {
                 if (directRouteFlag) {
                     Map<String, Double> directRouteMap = new HashMap<>();
-                    directRouteMap.put(COST, roundToTwoDecimals(spendAct*price*(dist + speed*timeDist)));
+                    directRouteMap.put(COST, roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)));
                     directRouteMap.put(DISTANCE, dist);
                     directRouteMap.put(DURATION, timeDist);
 
@@ -212,16 +217,16 @@ public class RoutingServiceImpl implements RoutingService {
                 } else {
                     if (accFinish < accOpt) {
                         double power = nodeFinish.getPower();
-                        double timeWait = (double) (rand.nextInt(5) + 1)/60;
+                        double timeWait = (double) (rand.nextInt(5) + 1) / 60;
 
                         double timeCharge = 0;
                         switch (nodeFinish.getPlugType()) {
                             case AC: {
-                                if (accFinish < accChargeTether*accMax) {
-                                    timeCharge += (accChargeTether*accMax - accFinish)/(0.5*power);
-                                    timeCharge += (accOpt - accChargeTether*accMax)/power;
+                                if (accFinish < accChargeTether * accMax) {
+                                    timeCharge += (accChargeTether * accMax - accFinish) / (0.5 * power);
+                                    timeCharge += (accOpt - accChargeTether * accMax) / power;
                                 } else {
-                                    timeCharge += (accOpt - accFinish)/power;
+                                    timeCharge += (accOpt - accFinish) / power;
                                 }
 
                                 break;
@@ -232,13 +237,13 @@ public class RoutingServiceImpl implements RoutingService {
                                 if (accDiff >= minEnergyDcCharge) {
                                     timeCharge += getTimeWaitFromRegressionModel(temp, accDiff);
                                 } else {
-                                    Map<String, String> routePointMap =
-                                            getRoutePointsMap(false, nodeStart, nodeFinish);
+                                    Map<String, String> routePointMap = getRoutePointsMap(false, nodeStart, nodeFinish);
 
-                                    logger.error("Unable to build the route between nodes '"+
-                                            routePointMap.get(START_POINT) + "' and '" +
-                                            routePointMap.get(FINISH_POINT) + "' due to small amount of energy " +
-                                            "to be replenished by DC charging station");
+                                    logger.error(
+                                            "Unable to build the route between nodes '" + routePointMap.get(START_POINT)
+                                                    + "' and '" + routePointMap.get(FINISH_POINT)
+                                                    + "' due to small amount of energy "
+                                                    + "to be replenished by DC charging station");
 
                                     return new HashMap<>();
                                 }
@@ -248,9 +253,9 @@ public class RoutingServiceImpl implements RoutingService {
                         }
                         timeCharge = roundToTwoDecimals(timeCharge);
                         double duration = roundToTwoDecimals(timeDist + timeWait + timeCharge);
-                        double cost = roundToTwoDecimals(spendAct*price*(dist + speed*timeDist) +
-                                                         spendAct*price*speed*(timeWait + timeCharge) +
-                                                         price*(accOpt - accFinish));
+                        double cost = roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)
+                                + spendAct * price * speed * (timeWait + timeCharge)
+                                + price * (accOpt - accFinish));
 
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
@@ -269,22 +274,19 @@ public class RoutingServiceImpl implements RoutingService {
                 return new HashMap<>();
             }
         } catch (Exception E) {
-            Map<String, String> routePointMap =
-                    getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+            Map<String, String> routePointMap = getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
 
-            logger.error("Unable to build the route between nodes '"+
-                         routePointMap.get(START_POINT) + "' and '" +
-                         routePointMap.get(FINISH_POINT) + "' due to " + E);
+            logger.error("Unable to build the route between nodes '" + routePointMap.get(START_POINT)
+                    + "' and '" + routePointMap.get(FINISH_POINT)
+                    + "' due to " + E);
 
             return new HashMap<>();
         }
     }
 
-    public Map<String, Double> getRouteParams(Station nodeStart,
-                                              Station nodeFinish,
-                                              boolean directRouteFlag) throws InterruptedException {
-        Map<String, String> routePointMap =
-                getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish, boolean directRouteFlag)
+            throws InterruptedException {
+        Map<String, String> routePointMap = getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
         logger.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));
         TimeUnit.SECONDS.sleep(2);
         double startLong = nodeStart.getLongitude();
@@ -295,29 +297,25 @@ public class RoutingServiceImpl implements RoutingService {
         openRouteServiceRequest.getCoordinates().add(List.of(startLat, startLong));
         openRouteServiceRequest.getCoordinates().add(List.of(finishLat, finishLong));
 
-        ResponseEntity<Object> responseEntity =
-                restTemplate.exchange(
-                        ROUTE_REQUEST,
-                        HttpMethod.POST,
-                        new HttpEntity<>(openRouteServiceRequest, routeHeaders),
-                        Object.class);
+        ResponseEntity<Object> responseEntity = restTemplate.exchange(
+                ROUTE_REQUEST, HttpMethod.POST, new HttpEntity<>(openRouteServiceRequest, routeHeaders), Object.class);
 
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            JsonObject jsonResponse = gson.toJsonTree(
-                    responseEntity.getBody()).getAsJsonObject();
+            JsonObject jsonResponse = gson.toJsonTree(responseEntity.getBody()).getAsJsonObject();
             JsonArray interMap = (JsonArray) jsonResponse.get(ROUTES);
-            JsonObject preFinalMap = interMap.get(0).getAsJsonObject()
-                    .get(SUMMARY).getAsJsonObject();
+            JsonObject preFinalMap =
+                    interMap.get(0).getAsJsonObject().get(SUMMARY).getAsJsonObject();
 
             Map<String, Double> resMap = new HashMap<>();
             resMap.put(DISTANCE, roundToTwoDecimals(preFinalMap.get(DISTANCE).getAsDouble()));
-            resMap.put(TRIP_DURATION, roundToTwoDecimals(preFinalMap.get(DURATION).getAsDouble() / 3600));
+            resMap.put(
+                    TRIP_DURATION, roundToTwoDecimals(preFinalMap.get(DURATION).getAsDouble() / 3600));
 
             return resMap;
         } else {
-            logger.error("Unable to determine route parameters between nodes '" +
-                    routePointMap.get(START_POINT) + "' and '" +
-                    routePointMap.get(FINISH_POINT) + "' due to " + responseEntity);
+            logger.error("Unable to determine route parameters between nodes '" + routePointMap.get(START_POINT)
+                    + "' and '" + routePointMap.get(FINISH_POINT)
+                    + "' due to " + responseEntity);
 
             return new HashMap<>();
         }
@@ -332,26 +330,22 @@ public class RoutingServiceImpl implements RoutingService {
         return Math.sqrt(sq(firstX - secondX) + sq(firstY - secondY));
     }
 
-    public LocationDTO getMidpoint(LocationDTO firstPoint,
-                                   LocationDTO secondPoint) {
+    public LocationDTO getMidpoint(LocationDTO firstPoint, LocationDTO secondPoint) {
         double firstX = firstPoint.getLongitude();
         double firstY = firstPoint.getLatitude();
         double secondX = secondPoint.getLongitude();
         double secondY = secondPoint.getLatitude();
 
-        return new LocationDTO((firstX + secondX)/2,
-                               (firstY + secondY)/2);
+        return new LocationDTO((firstX + secondX) / 2, (firstY + secondY) / 2);
     }
 
-    public List<Station> getStationsListFilteredByDist(List<Station> stationsList,
-                                                       LocationDTO midpoint,
-                                                       double diameter) {
-        double radiusExtended = diameter/2 * 1.2;
+    public List<Station> getStationsListFilteredByDist(
+            List<Station> stationsList, LocationDTO midpoint, double diameter) {
+        double radiusExtended = diameter / 2 * 1.2;
 
         List<Station> nodesFiltered = new ArrayList<>();
-        for (Station station: stationsList) {
-            LocationDTO stationCoords = new LocationDTO(station.getLongitude(),
-                                                        station.getLatitude());
+        for (Station station : stationsList) {
+            LocationDTO stationCoords = new LocationDTO(station.getLongitude(), station.getLatitude());
             double dist = getEuclideanDist(List.of(midpoint, stationCoords));
 
             if (dist <= radiusExtended) {
@@ -363,29 +357,23 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     public double getTimeWaitFromRegressionModel(double temperature, double accDiff) {
-        DcChargeDurationRequestDTO request =
-                new DcChargeDurationRequestDTO(List.of(accDiff), List.of(temperature));
+        DcChargeDurationRequestDTO request = new DcChargeDurationRequestDTO(List.of(accDiff), List.of(temperature));
 
-        ResponseEntity<DcChargeDurationOutputDTO> responseEntity =
-                restTemplate.exchange(
-                        "http://127.0.0.1:8000/routing/getDcChargeDuration",
-                        HttpMethod.POST,
-                        new HttpEntity<>(request, fastApiHeaders),
-                        DcChargeDurationOutputDTO.class);
+        ResponseEntity<DcChargeDurationOutputDTO> responseEntity = restTemplate.exchange(
+                "http://127.0.0.1:8000/routing/getDcChargeDuration",
+                HttpMethod.POST,
+                new HttpEntity<>(request, fastApiHeaders),
+                DcChargeDurationOutputDTO.class);
 
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            return Objects.requireNonNull(
-                    responseEntity.getBody()).getTimeCharge();
+            return Objects.requireNonNull(responseEntity.getBody()).getTimeCharge();
         } else {
-            throw new InternalError(
-                    "Unable to determine DC charge session duration with parameters: '" +
-                    temperature + "°C' and '" + accDiff + "kWh'");
+            throw new InternalError("Unable to determine DC charge session duration with parameters: '" + temperature
+                    + "°C' and '" + accDiff + "kWh'");
         }
     }
 
-    public Map<String, String> getRoutePointsMap(boolean directRouteFlag,
-                                                 Station nodeStart,
-                                                 Station nodeFinish) {
+    public Map<String, String> getRoutePointsMap(boolean directRouteFlag, Station nodeStart, Station nodeFinish) {
         String addressStart;
         String addressFinish;
         if (directRouteFlag) {
@@ -408,52 +396,48 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     public List<RouteNodeDTO> getRouteWithDijkstra(
-            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix,
-            RouteRequestDTO routeRequest) {
+            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix, RouteRequestDTO routeRequest) {
 
         Map<Integer, Double> routeMap = new HashMap<>();
         Map<Integer, Integer> connectMap = new HashMap<>();
         List<Integer> queue = new ArrayList<>();
-        for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>>
-                entry: adjacencyMatrix.entrySet()) {
+        for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>> entry : adjacencyMatrix.entrySet()) {
             int entryId = entry.getKey();
-            if (entryId == 0){
+            if (entryId == 0) {
                 routeMap.put(entryId, startNodeValDouble);
             } else {
                 routeMap.put(entryId, Double.MAX_VALUE);
             }
-            connectMap.put(entryId,  null);
+            connectMap.put(entryId, null);
             queue.add(entryId);
         }
 
         List<Integer> pathIdsList = new ArrayList<>();
         routeMap.put(Integer.MAX_VALUE, Double.MAX_VALUE);
         while (!queue.isEmpty()) {
-           int keyMin = queue.get(0);
-           logger.info("Nodes left: " + queue.size());
+            int keyMin = queue.get(0);
+            logger.info("Nodes left: " + queue.size());
 
-           double valMin = routeMap.get(keyMin);
+            double valMin = routeMap.get(keyMin);
 
-           for (int pos = 0; pos < queue.size(); pos++) {
-               if (routeMap.get(queue.get(pos)) < valMin) {
-                   keyMin = queue.get(pos);
-                   valMin = routeMap.get(keyMin);
-               }
+            for (int pos = 0; pos < queue.size(); pos++) {
+                if (routeMap.get(queue.get(pos)) < valMin) {
+                    keyMin = queue.get(pos);
+                    valMin = routeMap.get(keyMin);
+                }
 
-               int currentNodeId = keyMin;
-               queue.removeIf(id -> Objects.equals(id, currentNodeId));
+                int currentNodeId = keyMin;
+                queue.removeIf(id -> Objects.equals(id, currentNodeId));
 
-               for (Map<Integer, Map<String, Double>> nextNodeMap:
-                       adjacencyMatrix.get(currentNodeId)) {
-                   int nextNodeMapId = nextNodeMap.keySet().iterator().next();
-                   double routeCost = nextNodeMap.values().iterator().next().get(COST) +
-                           routeMap.get(currentNodeId);
-                   if (routeMap.get(nextNodeMapId) > routeCost) {
-                       routeMap.put(nextNodeMapId, routeCost);
-                       connectMap.put(nextNodeMapId, currentNodeId);
-                   }
-               }
-           }
+                for (Map<Integer, Map<String, Double>> nextNodeMap : adjacencyMatrix.get(currentNodeId)) {
+                    int nextNodeMapId = nextNodeMap.keySet().iterator().next();
+                    double routeCost = nextNodeMap.values().iterator().next().get(COST) + routeMap.get(currentNodeId);
+                    if (routeMap.get(nextNodeMapId) > routeCost) {
+                        routeMap.put(nextNodeMapId, routeCost);
+                        connectMap.put(nextNodeMapId, currentNodeId);
+                    }
+                }
+            }
         }
 
         Integer finishId = Integer.MAX_VALUE;
@@ -472,21 +456,19 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     public List<RouteNodeDTO> getRouteWithEvolution(
-            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix,
-            RouteRequestDTO routeRequest) {
+            Map<Integer, List<Map<Integer, Map<String, Double>>>> adjacencyMatrix, RouteRequestDTO routeRequest) {
 
         List<Integer> adjacencyNodesList = new ArrayList<>();
-        for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>> node:
-                adjacencyMatrix.entrySet()) {
+        for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>> node : adjacencyMatrix.entrySet()) {
             adjacencyNodesList.add(node.getKey());
-            adjacencyNodesList.addAll(
-                    node.getValue().stream().map(n -> n.keySet().iterator().next()).toList());
+            adjacencyNodesList.addAll(node.getValue().stream()
+                    .map(n -> n.keySet().iterator().next())
+                    .toList());
         }
         adjacencyNodesList = new ArrayList<>(new HashSet<>(adjacencyNodesList));
 
-        GenerationDTO parent =
-                new GenerationDTO(new HashMap<>(), new ArrayList<>());
-        for (Integer id: adjacencyNodesList) {
+        GenerationDTO parent = new GenerationDTO(new HashMap<>(), new ArrayList<>());
+        for (Integer id : adjacencyNodesList) {
             if (id == 0 || id == Integer.MAX_VALUE) {
                 parent.getDnaMap().put(id, 1);
             } else {
@@ -502,9 +484,8 @@ public class RoutingServiceImpl implements RoutingService {
                 parent.getDnaMap().keySet().stream().sorted().toList();
 
         while (success < genSuccessRep) {
-            rep ++;
-            logger.info("Generation " + rep + "out of " + genRep +
-                    "; Successful DNAs: " + success);
+            rep++;
+            logger.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
 
             if (rep > genRep) {
                 if (success == 0) {
@@ -514,7 +495,7 @@ public class RoutingServiceImpl implements RoutingService {
 
             int randOperator = rand.nextInt(4);
             GenerationDTO child = new GenerationDTO();
-            switch(randOperator) {
+            switch (randOperator) {
                 case 0: {
                     child = getMutation(parent, geneIdsList);
                     break;
@@ -536,7 +517,7 @@ public class RoutingServiceImpl implements RoutingService {
             }
 
             List<Integer> pathIdsList = new ArrayList<>();
-            for (Map.Entry<Integer, Integer> entry: child.getDnaMap().entrySet()) {
+            for (Map.Entry<Integer, Integer> entry : child.getDnaMap().entrySet()) {
                 if (entry.getValue() == 1) {
                     pathIdsList.add(entry.getKey());
                 }
@@ -546,28 +527,32 @@ public class RoutingServiceImpl implements RoutingService {
             boolean failureFlag = false;
             pathIdsList = pathIdsList.stream().sorted().toList();
             Set<Integer> currentNodeIdsSet = adjacencyMatrix.keySet();
-            for (int i = 0; i < pathIdsList.size()-1; i++) {
+            for (int i = 0; i < pathIdsList.size() - 1; i++) {
                 int currentNodeId = pathIdsList.get(i);
 
                 if (currentNodeIdsSet.contains(currentNodeId)) {
-                    List<Map<Integer, Map<String, Double>>> nextNodesList =
-                            adjacencyMatrix.get(currentNodeId);
+                    List<Map<Integer, Map<String, Double>>> nextNodesList = adjacencyMatrix.get(currentNodeId);
                     int nextNodeId = pathIdsList.get(i + 1);
-                    List<Map<Integer, Map<String, Double>>> nextNodesListFilter =
-                            nextNodesList.stream().filter(node ->
-                                    Objects.equals(node.keySet().iterator().next(), nextNodeId)).toList();
+                    List<Map<Integer, Map<String, Double>>> nextNodesListFilter = nextNodesList.stream()
+                            .filter(node ->
+                                    Objects.equals(node.keySet().iterator().next(), nextNodeId))
+                            .toList();
 
                     if (nextNodesListFilter.isEmpty()) {
                         failureFlag = true;
                         break;
                     } else {
-                        routeCost += nextNodesListFilter.get(0).values().iterator().next().get(COST);
+                        routeCost += nextNodesListFilter
+                                .get(0)
+                                .values()
+                                .iterator()
+                                .next()
+                                .get(COST);
                     }
                 } else {
                     failureFlag = true;
                     break;
                 }
-
             }
 
             if (!failureFlag) {
@@ -581,8 +566,7 @@ public class RoutingServiceImpl implements RoutingService {
 
             parent = child;
         }
-        logger.info("Generation " + rep + "out of " + genRep +
-                "; Successful DNAs: " + success);
+        logger.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
 
         return getRouteNodesDromIdsList(adjacencyMatrix, bestPathIdsList, routeRequest);
     }
@@ -590,8 +574,7 @@ public class RoutingServiceImpl implements RoutingService {
     public GenerationDTO getMutation(GenerationDTO generation, List<Integer> geneIdsList) {
         int randomGene = rand.nextInt(geneIdsList.size() - 2) + 1;
         int mutatedGeneId = geneIdsList.get(randomGene);
-        generation.getDnaMap().put(mutatedGeneId,
-                1 - generation.getDnaMap().get(mutatedGeneId));
+        generation.getDnaMap().put(mutatedGeneId, 1 - generation.getDnaMap().get(mutatedGeneId));
 
         return generation;
     }
@@ -599,16 +582,16 @@ public class RoutingServiceImpl implements RoutingService {
     public GenerationDTO getCrossover(GenerationDTO generation, List<Integer> geneIdsList) {
         List<Map<Integer, Integer>> parentDnasList = generation.getParentsList();
         if (parentDnasList.size() < 3) {
-            GenerationDTO mutant =  getMutation(generation, geneIdsList);
+            GenerationDTO mutant = getMutation(generation, geneIdsList);
             mutant.getParentsList().add(mutant.getDnaMap());
 
             return mutant;
         }
 
-        Map<Integer,Integer> parent1 = parentDnasList.get(rand.nextInt(parentDnasList.size() - 1));
-        Map<Integer,Integer> parent2 = parentDnasList.get(rand.nextInt(parentDnasList.size() - 1));
+        Map<Integer, Integer> parent1 = parentDnasList.get(rand.nextInt(parentDnasList.size() - 1));
+        Map<Integer, Integer> parent2 = parentDnasList.get(rand.nextInt(parentDnasList.size() - 1));
 
-        for (int geneId: geneIdsList.subList(1, geneIdsList.size()-1)) {
+        for (int geneId : geneIdsList.subList(1, geneIdsList.size() - 1)) {
             int childGene = parent1.get(geneId) + parent2.get(geneId);
             if (childGene == 2) {
                 generation.getDnaMap().put(geneId, rand.nextInt(2));
@@ -631,7 +614,7 @@ public class RoutingServiceImpl implements RoutingService {
         double costCumm = 0.0;
         int previousId = 0;
         List<RouteNodeDTO> routeNodesList = new ArrayList<>();
-        for (Station station: routeRequest.getFilteredStationsList()) {
+        for (Station station : routeRequest.getFilteredStationsList()) {
             int stationId = station.getId();
             if (pathIdsList.contains(stationId)) {
                 RouteNodeDTO routeNode = new RouteNodeDTO();
@@ -639,9 +622,12 @@ public class RoutingServiceImpl implements RoutingService {
 
                 if (stationId != 0) {
                     Map<Integer, Map<String, Double>> edgeMap = adjacencyMatrix.get(previousId).stream()
-                            .filter(stMap -> stMap.keySet().iterator().next() == stationId).toList().get(0);
+                            .filter(stMap -> stMap.keySet().iterator().next() == stationId)
+                            .toList()
+                            .get(0);
                     distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
-                    costCumm += roundToTwoDecimals(edgeMap.values().iterator().next().get(COST));
+                    costCumm += roundToTwoDecimals(
+                            edgeMap.values().iterator().next().get(COST));
                     reachDurationCumm += edgeMap.values().iterator().next().get(DURATION);
                     double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
 
@@ -680,21 +666,21 @@ public class RoutingServiceImpl implements RoutingService {
         if (afterDecimalPartString.length() == 1) {
             afterDecimalPartString += "0";
         }
-        afterDecimalPartString = afterDecimalPartString.substring(0,2);
-        double minutesDouble = round(Double.parseDouble(afterDecimalPartString)/100*60);
+        afterDecimalPartString = afterDecimalPartString.substring(0, 2);
+        double minutesDouble = round(Double.parseDouble(afterDecimalPartString) / 100 * 60);
 
         return Integer.parseInt(String.valueOf(minutesDouble).split(DECIMAL_POINT)[0]);
     }
 
     public double sq(double x) {
-        return x*x;
+        return x * x;
     }
 
     public double roundToTwoDecimals(double val) {
-        val = val*100;
+        val = val * 100;
         val = round(val);
 
-        return val/100;
+        return val / 100;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -704,8 +690,8 @@ public class RoutingServiceImpl implements RoutingService {
         String api = String.valueOf(jsonApi.get("open_route")).replace("\"", "");
 
         routeHeaders.add("Authorization", api);
-        routeHeaders.add("Accept", "application/json, application/geo+json, " +
-                "application/gpx+xml, img/png; charset=utf-8");
+        routeHeaders.add(
+                "Accept", "application/json, application/geo+json, " + "application/gpx+xml, img/png; charset=utf-8");
         routeHeaders.add("Content-Type", "application/json; charset=utf-8");
 
         fastApiHeaders.add("Content-Type", "application/json");

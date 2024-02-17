@@ -3,10 +3,8 @@ package electrocar.dto.entity;
 import electrocar.dto.enums.Plug;
 import electrocar.dto.enums.PlugType;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-
-import java.math.BigDecimal;
 import javax.persistence.*;
+import lombok.*;
 
 @Data
 @Entity
