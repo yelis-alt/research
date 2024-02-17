@@ -19,9 +19,9 @@ public class WeatherController {
     private final WeatherService weatherService;
 
     @GetMapping(value = "/getTemperature")
-    public List<Double> getTemperature(@Valid @RequestBody LocationDTO locationDTO, @NotBlank @RequestParam String date)
+    public List<Double> getTemperature(@Valid @RequestBody LocationDTO location, @NotBlank @RequestParam String date)
             throws IOException, ParseException {
 
-        return weatherService.getTemperature(locationDTO, date);
+        return weatherService.getTemperature(location, date);
     }
 }
