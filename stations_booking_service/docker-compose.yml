@@ -1,37 +1,42 @@
 version: '3'
 
 services:
-    nginx:
-        image: nginx:latest
-        container_name: nginx
+    frontend:
+        build: ./frontend
+        container_name: frontend
         ports:
             - '80:80'
             - '443:443'
         volumes:
-            - ./frontend/nginx/log:/var/log/nginx
-    java:
-        build: backend_java
-        container_name: java
+            - ./docker/nginx/log:/var/log/nginx
+        depends_on:
+            - python-application
+            - java-application
+    java-application:
+        build: ./backend_java
+        hostname: java-application
+        container_name: java-application
+        links:
+            - postgres
         volumes:
-            - ./app:/var/www:cached
-    python:
-        build: backend_python
-        container_name: python
-        volumes:
-          - ./app:/var/www:cached
+            - ./docker/java/application.properties:/usr/share/application/application.properties
+        depends_on:
+            - postgres
+            - python-application
+    python-application:
+        build: ./backend_python
+        hostname: python-application
+        container_name: python-application
     postgres:
         image: postgres:latest
         container_name: postgres
+        hostname: postgres-db
         ports:
             - "5433:5432"
         volumes:
-            - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-            - ./postgres:/var/lib/postgres
+            - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./docker/postgres:/var/lib/postgres
         environment:
             POSTGRES_DB: electrocar_dev
             POSTGRES_USER: delphi
             POSTGRES_PASSWORD: minidelphi
-        healthcheck:
-            test: [ "CMD", "ping", "-h", "localhost" ]
-            timeout: 20s
-            retries: 10

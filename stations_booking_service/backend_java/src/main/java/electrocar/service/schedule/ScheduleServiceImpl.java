@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ScheduleServiceImpl implements ScheduleService {
-    private static final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
     private static final String SECONDS_PART = ":00";
 
+    private final SimpleDateFormat formatter;
     private final ScheduleDao scheduleDao;
 
     @Override

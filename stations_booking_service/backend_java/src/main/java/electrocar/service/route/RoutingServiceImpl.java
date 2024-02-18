@@ -12,33 +12,23 @@ import electrocar.dto.entity.Station;
 import electrocar.dto.evolution.GenerationDTO;
 import electrocar.dto.route.*;
 import electrocar.dto.station.FilterStationDTO;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
-    private static final Logger logger = LoggerFactory.getLogger(RoutingServiceImpl.class);
-    private static final String ROUTE_REQUEST = "https://api.openrouteservice.org/v2/directions/driving-car";
-    private static final String API_JSON = "api.json";
-    private static final RestTemplate restTemplate = new RestTemplate();
-    private static final OpenRouteServiceRequestDTO openRouteServiceRequest =
-            new OpenRouteServiceRequestDTO(new ArrayList<>(), false, "km", false, "shortest", false);
-    private static final Gson gson = new Gson();
-    private static final Random rand = new Random();
     private static final String COST = "cost";
     private static final String DURATION = "duration";
     private static final String DISTANCE = "distance";
@@ -49,19 +39,30 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String START_POINT = "start point";
     private static final String FINISH_POINT = "finish point";
     private static final String DECIMAL_POINT = "\\.";
-    private static final double startNodeValDouble = 0.0;
-    private static final int startNodeValInt = 0;
+    private static final double zeroDouble = 0.0;
+    private static final int zeroInt = 0;
     private static final double minEnergyDcCharge = 12.4;
     private static final double accOptCoef = 0.8;
     private static final double accChargeTether = 0.2;
     private static final int speed = 45;
     private static final int price = 15;
-    private static final int genSuccessRep = 5;
+    private static final int genSuccessRep = 20;
     private static final int genRep = 1000;
 
-    private final HttpHeaders routeHeaders = new HttpHeaders();
-    private final HttpHeaders fastApiHeaders = new HttpHeaders();
+    private final OpenRouteServiceRequestDTO openRouteServiceRequest;
+    private final RestTemplate restTemplate;
+    private final Gson gson;
+    private final Random rand;
     private final StationDao stationDao;
+
+    @Value("${openRouteService.request.url}")
+    private String routeRequestUrl;
+
+    @Value("${openRouteService.request.api}")
+    private String api;
+
+    private HttpHeaders routeHeaders;
+    private HttpHeaders fastApiHeaders;
 
     @Override
     public List<Station> getFilteredStationsList(FilterStationDTO filterStation) {
@@ -95,19 +96,19 @@ public class RoutingServiceImpl implements RoutingService {
             List<RouteNodeDTO> routeNodesList = new ArrayList<>();
             routeNodesList.add(new RouteNodeDTO(
                     startPoint,
-                    startNodeValDouble,
-                    startNodeValDouble,
-                    new DurationDTO(startNodeValInt, startNodeValInt),
-                    new DurationDTO(startNodeValInt, startNodeValInt)));
+                    zeroDouble,
+                    zeroDouble,
+                    new DurationDTO(zeroInt, zeroInt),
+                    new DurationDTO(zeroInt, zeroInt)));
 
-            double reachDuration = directRouteMap.get(DURATION);
+            double reachDuration = directRouteMap.get(TRIP_DURATION);
             int hours = getHoursFromDuration(reachDuration);
             int minutes = getMinutesFromReachDuration(reachDuration);
             routeNodesList.add(new RouteNodeDTO(
                     finishPoint,
                     directRouteMap.get(DISTANCE),
                     directRouteMap.get(COST),
-                    new DurationDTO(startNodeValInt, startNodeValInt),
+                    new DurationDTO(zeroInt, zeroInt),
                     new DurationDTO(hours, minutes)));
 
             return routeNodesList;
@@ -211,13 +212,14 @@ public class RoutingServiceImpl implements RoutingService {
                     Map<String, Double> directRouteMap = new HashMap<>();
                     directRouteMap.put(COST, roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)));
                     directRouteMap.put(DISTANCE, dist);
-                    directRouteMap.put(DURATION, timeDist);
+                    directRouteMap.put(TRIP_DURATION, timeDist);
+                    directRouteMap.put(CHARGE_DURATION, zeroDouble);
 
                     return directRouteMap;
                 } else {
                     if (accFinish < accOpt) {
                         double power = nodeFinish.getPower();
-                        double timeWait = (double) (rand.nextInt(5) + 1) / 60;
+                        double timeWait = roundToTwoDecimals((double) (rand.nextInt(5) + 1) / 60);
 
                         double timeCharge = 0;
                         switch (nodeFinish.getPlugType()) {
@@ -237,9 +239,9 @@ public class RoutingServiceImpl implements RoutingService {
                                 if (accDiff >= minEnergyDcCharge) {
                                     timeCharge += getTimeWaitFromRegressionModel(temp, accDiff);
                                 } else {
-                                    Map<String, String> routePointMap = getRoutePointsMap(false, nodeStart, nodeFinish);
+                                    Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
 
-                                    logger.error("Unable to build the route between nodes '"
+                                    log.error("Unable to build the route between nodes '"
                                             + routePointMap.get(START_POINT)
                                             + "' and '"
                                             + routePointMap.get(FINISH_POINT)
@@ -253,7 +255,6 @@ public class RoutingServiceImpl implements RoutingService {
                             }
                         }
                         timeCharge = roundToTwoDecimals(timeCharge);
-                        double duration = roundToTwoDecimals(timeDist + timeWait + timeCharge);
                         double cost = roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)
                                 + spendAct * price * speed * (timeWait + timeCharge)
                                 + price * (accOpt - accFinish));
@@ -261,8 +262,8 @@ public class RoutingServiceImpl implements RoutingService {
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
                         edgeMap.put(DISTANCE, dist);
-                        edgeMap.put(CHARGE_DURATION, timeCharge);
-                        edgeMap.put(DURATION, duration);
+                        edgeMap.put(TRIP_DURATION, timeDist);
+                        edgeMap.put(CHARGE_DURATION, timeCharge + timeWait);
 
                         return edgeMap;
                     } else {
@@ -275,9 +276,9 @@ public class RoutingServiceImpl implements RoutingService {
                 return new HashMap<>();
             }
         } catch (Exception E) {
-            Map<String, String> routePointMap = getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
+            Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
 
-            logger.error("Unable to build the route between nodes '"
+            log.error("Unable to build the route between nodes '"
                     + routePointMap.get(START_POINT)
                     + "' and '"
                     + routePointMap.get(FINISH_POINT)
@@ -290,8 +291,8 @@ public class RoutingServiceImpl implements RoutingService {
 
     public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish, boolean directRouteFlag)
             throws InterruptedException {
-        Map<String, String> routePointMap = getRoutePointsMap(directRouteFlag, nodeStart, nodeFinish);
-        logger.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));
+        Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
+        log.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));
         TimeUnit.SECONDS.sleep(2);
         double startLong = nodeStart.getLongitude();
         double startLat = nodeStart.getLatitude();
@@ -302,7 +303,10 @@ public class RoutingServiceImpl implements RoutingService {
         openRouteServiceRequest.getCoordinates().add(List.of(finishLat, finishLong));
 
         ResponseEntity<Object> responseEntity = restTemplate.exchange(
-                ROUTE_REQUEST, HttpMethod.POST, new HttpEntity<>(openRouteServiceRequest, routeHeaders), Object.class);
+                routeRequestUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(openRouteServiceRequest, routeHeaders),
+                Object.class);
 
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
             JsonObject jsonResponse = gson.toJsonTree(responseEntity.getBody()).getAsJsonObject();
@@ -317,7 +321,7 @@ public class RoutingServiceImpl implements RoutingService {
 
             return resMap;
         } else {
-            logger.error("Unable to determine route parameters between nodes '"
+            log.error("Unable to determine route parameters between nodes '"
                     + routePointMap.get(START_POINT)
                     + "' and '"
                     + routePointMap.get(FINISH_POINT)
@@ -383,18 +387,18 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
-    public Map<String, String> getRoutePointsMap(boolean directRouteFlag, Station nodeStart, Station nodeFinish) {
+    public Map<String, String> getRoutePointsMap(Station nodeStart, Station nodeFinish) {
         String addressStart;
-        String addressFinish;
-        if (directRouteFlag) {
-            if (nodeStart.getId() == 0) {
-                addressStart = START_POINT;
-            } else {
-                addressStart = nodeStart.getAddress();
-            }
-            addressFinish = FINISH_POINT;
+        if (nodeStart.getId() == 0) {
+            addressStart = START_POINT;
         } else {
             addressStart = nodeStart.getAddress();
+        }
+
+        String addressFinish;
+        if (nodeFinish.getId() == Integer.MAX_VALUE) {
+            addressFinish = FINISH_POINT;
+        } else {
             addressFinish = nodeFinish.getAddress();
         }
 
@@ -414,7 +418,7 @@ public class RoutingServiceImpl implements RoutingService {
         for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>> entry : adjacencyMatrix.entrySet()) {
             int entryId = entry.getKey();
             if (entryId == 0) {
-                routeMap.put(entryId, startNodeValDouble);
+                routeMap.put(entryId, zeroDouble);
             } else {
                 routeMap.put(entryId, Double.MAX_VALUE);
             }
@@ -426,7 +430,7 @@ public class RoutingServiceImpl implements RoutingService {
         routeMap.put(Integer.MAX_VALUE, Double.MAX_VALUE);
         while (!queue.isEmpty()) {
             int keyMin = queue.get(0);
-            logger.info("Nodes left: " + queue.size());
+            log.info("Nodes left: " + queue.size());
 
             double valMin = routeMap.get(keyMin);
 
@@ -495,7 +499,7 @@ public class RoutingServiceImpl implements RoutingService {
 
         while (success < genSuccessRep) {
             rep++;
-            logger.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
+            log.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
 
             if (rep > genRep) {
                 if (success == 0) {
@@ -576,7 +580,7 @@ public class RoutingServiceImpl implements RoutingService {
 
             parent = child;
         }
-        logger.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
+        log.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
 
         return getRouteNodesDromIdsList(adjacencyMatrix, bestPathIdsList, routeRequest);
     }
@@ -622,6 +626,7 @@ public class RoutingServiceImpl implements RoutingService {
         double reachDurationCumm = 0.0;
         double distanceCumm = 0.0;
         double costCumm = 0.0;
+        double chargeDurationCumm = 0.0;
         int previousId = 0;
         List<RouteNodeDTO> routeNodesList = new ArrayList<>();
         for (Station station : routeRequest.getFilteredStationsList()) {
@@ -635,11 +640,13 @@ public class RoutingServiceImpl implements RoutingService {
                             .filter(stMap -> stMap.keySet().iterator().next() == stationId)
                             .toList()
                             .get(0);
+                    double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
                     distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
                     costCumm += roundToTwoDecimals(
                             edgeMap.values().iterator().next().get(COST));
-                    reachDurationCumm += edgeMap.values().iterator().next().get(DURATION);
-                    double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
+                    reachDurationCumm += edgeMap.values().iterator().next().get(TRIP_DURATION);
+                    reachDurationCumm += chargeDurationCumm;
+                    chargeDurationCumm += chargeDuration;
 
                     Integer hoursCharge = getHoursFromDuration(chargeDuration);
                     Integer minutesCharge = getMinutesFromReachDuration(chargeDuration);
@@ -651,10 +658,10 @@ public class RoutingServiceImpl implements RoutingService {
                     routeNode.setChargeDuration(new DurationDTO(hoursCharge, minutesCharge));
                     routeNode.setReachDuration(new DurationDTO(hours, minutes));
                 } else {
-                    routeNode.setDistance(startNodeValDouble);
-                    routeNode.setCost(startNodeValDouble);
-                    routeNode.setChargeDuration(new DurationDTO(startNodeValInt, startNodeValInt));
-                    routeNode.setReachDuration(new DurationDTO(startNodeValInt, startNodeValInt));
+                    routeNode.setDistance(zeroDouble);
+                    routeNode.setCost(zeroDouble);
+                    routeNode.setChargeDuration(new DurationDTO(zeroInt, zeroInt));
+                    routeNode.setReachDuration(new DurationDTO(zeroInt, zeroInt));
                 }
 
                 previousId = stationId;
@@ -694,16 +701,14 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void initHeaders() throws FileNotFoundException {
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(API_JSON));
-        JsonObject jsonApi = gson.fromJson(bufferedReader, JsonObject.class);
-        String api = String.valueOf(jsonApi.get("open_route")).replace("\"", "");
-
+    public void initHeaders() {
+        routeHeaders = new HttpHeaders();
         routeHeaders.add("Authorization", api);
         routeHeaders.add(
                 "Accept", "application/json, application/geo+json, " + "application/gpx+xml, img/png; charset=utf-8");
         routeHeaders.add("Content-Type", "application/json; charset=utf-8");
 
+        fastApiHeaders = new HttpHeaders();
         fastApiHeaders.add("Content-Type", "application/json");
         fastApiHeaders.add("Accept", "application/json");
     }
