@@ -43,7 +43,7 @@ function images() {
 }
 
 function build() {
-   return gulp.src(['app/templates/main.html',
+   return gulp.src(['app/index.html',
                     'app/css/style.min.css',
                     'app/js/main.min.js',
                     'app/fonts/*.ttf'], {base:'app'})
