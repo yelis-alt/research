@@ -21,7 +21,7 @@ services:
         links:
             - postgres
         volumes:
-            - ./docker/java/application.properties:/usr/share/application/application.properties
+            - ./backend_java/src/resources/application.properties:/usr/share/application/application.properties
         depends_on:
             - postgres
             - python-application
