@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class WeatherController {
     private final WeatherService weatherService;
 
-    @GetMapping(value = "/getTemperature")
+    @PostMapping(value = "/getTemperature")
     public List<Double> getTemperature(@Valid @RequestBody WeatherRequestDTO weatherRequest)
             throws IOException, ParseException {
 

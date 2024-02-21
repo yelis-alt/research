@@ -68,7 +68,7 @@ function drawWIndows(){
         })
     });
 }
-
+/*
 function getJsonIds(){
     let url = './schedule.json'
     fetch(url)
@@ -98,6 +98,8 @@ function getJsonIds(){
             });
         });
 }
+
+ */
 
 function filterWindows(){
     $.each(ids, function(index1, value1){
@@ -164,7 +166,7 @@ let schedule = {};
 let availWin = {};
 let indexWindows = [];
 let subWIn = {}
-getJsonIds();
+//getJsonIds();
 function booking_panel(){
     setWindows();
     filterWindows();

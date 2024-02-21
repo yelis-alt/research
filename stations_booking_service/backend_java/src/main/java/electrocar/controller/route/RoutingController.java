@@ -9,10 +9,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @RestController
@@ -21,13 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoutingController {
     private final RoutingService routingService;
 
-    @GetMapping(value = "/getFilteredStationsList")
+    @PostMapping(value = "/getFilteredStationsList")
     public List<Station> getFilteredStationsList(@Valid @RequestBody FilterStationDTO filterStation) {
 
         return routingService.getFilteredStationsList(filterStation);
     }
 
-    @GetMapping(value = "/getRoute")
+    @PostMapping(value = "/getRoute")
     public List<RouteNodeDTO> getRoute(@Valid @RequestBody RouteRequestDTO routeRequestDTO) {
 
         return routingService.getRoute(routeRequestDTO);

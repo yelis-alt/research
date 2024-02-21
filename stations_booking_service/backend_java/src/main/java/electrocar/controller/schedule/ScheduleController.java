@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class ScheduleController {
     private final ScheduleService scheduleService;
 
-    @GetMapping(value = "/getTimeWindows")
+    @PostMapping(value = "/getTimeWindows")
     public List<String> getTimeWindows(@Valid @RequestBody TimeWindowsRequestDTO timeWindowsRequest) {
 
         return scheduleService.getTimeWindows(timeWindowsRequest);

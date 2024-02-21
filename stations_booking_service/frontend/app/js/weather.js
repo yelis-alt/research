@@ -223,23 +223,17 @@ let centers =  {"Майкоп": [44.6098268, 40.1006606],
                 "Салехард": [66.5492077, 66.6085318],
                 "Ярославль": [57.6215477, 39.8977411]}
 
+let long;
+let lati;
 $(document).ready(function() {
     $('#loading').hide();
     $('#booking').hide();
-    if (YMaps.location)
-    {
-        let lati = YMaps.location.latitude;
-        let long = YMaps.location.longitude;
-        let cita = YMaps.location.city;
-        let obl = YMaps.location.region;
-        if (dict[$('#select-city').val(cita)] > 0) {
-            $('#select-city').val(cita);
-        }
-        else {
-            let cap = capitals[obl];
-            $('#select-city').val(cap);
-        }
-        getTemperature(lati, long, getDateString(new Date()));
+    if (YMaps.location) {
+        long = YMaps.location.longitude;
+        lati = YMaps.location.latitude;
+
+
+        getTemperature(long, lati, getDateString(new Date()));
     }
     else
         alert("Пожалуйста, разрешите доступ к использованию Вашей геопозиции!");
@@ -247,16 +241,17 @@ $(document).ready(function() {
 
 function getTemperature(longitude, latitude, dateRef) {
     $.ajax({
-        method: 'GET',
-        url: 'weather/getTemperature',
+        method: 'POST',
+        url: 'http://localhost:8080/weather/getTemperature',
         data: JSON.stringify(
             {location: {
                                longitude: longitude,
-                               latitude: latitude},
+                               latitude: latitude
+                              },
                     date: dateRef
                    }),
-        contentType: 'application/json',
         dataType : 'json',
+        contentType: 'application/json',
         success: function(data) {
             $(".weather__temp-number").val(data[0]);
 
@@ -275,14 +270,35 @@ function getTemperature(longitude, latitude, dateRef) {
 }
 
 $('.city-select').on('change', function () {
+    let cita = YMaps.location.city;
+    let obl = YMaps.location.region;
+    if (dict[$('#select-city')].val(cita)>0) {
+        $('#select-city').val(cita);
+    }
+    else {
+        let cap = capitals[obl];
+        $('#select-city').val(cap);
+    }
+
     let centersList = centers[$('#select-city').val()];
-    getTemperature(centersList[0], centersList[1],
-                   getDateString($('#trip_date').val()));
+    long = centersList[0]
+    lati = centersList[1]
+    getTemperature(long, lati, getDateString($('#trip_date').val()));
 });
 
 function getDateString(dateRaw) {
+    let day = dateRaw.getDate();
+    if (day < 10) {
+        day = "0" + dayString.toString();
+    } else {
+        day = day.toString();
+    }
+    let month = dateRaw.getMonth()+1;
+    if (month < 10) {
+        month = 0 + month.toString();
+    } else {
+        month = month.toString();
+    }
     return dateRaw.getFullYear().toString() + "-" +
-        dateRaw.getMonth() + "-" +
-        dateRaw.getDate();
+        month + "-" + day;
 }
-

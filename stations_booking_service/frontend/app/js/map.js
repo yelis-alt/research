@@ -1,7 +1,7 @@
 //инициализация карты
 document.body.style.zoom = "125%";
 
-ymaps.ready(init);
+ymaps.ready(init, );
 
 function coordize(desc, n, p) {
     return desc["properties"]["waypoints"][n]["coordinates"][p].toString();
@@ -104,38 +104,42 @@ let toPower = 50;
 let fromPrice = 0;
 let toPrice = 60;
 let stationsList;
-
 function getStations() {
-    if (geoObj.length !== 0){
+    if (geoObj.length !== 0) {
         eraseMap();
+    }
+
     $.ajax({
-        type:'GET',
-        url: 'routing/getFilteredStationsList',
-        data: JSON.stringify({plug: plug,
-                                     plugType: plugType,
-                                     fromPower: fromPower,
-                                     toPower: toPower,
-                                     fromPrice: fromPrice,
-                                     toPrice: toPrice}),
-        dataType : 'json',
+        type: 'POST',
+        url: 'http://localhost:8080/routing/getFilteredStationsList',
+        data: JSON.stringify({
+            plug: plug,
+            plugType: plugType,
+            fromPower: fromPower,
+            toPower: toPower,
+            fromPrice: fromPrice,
+            toPrice: toPrice
+        }),
+        dataType: 'json',
         contentType: "application/json",
-        success: function(stationsList){
+        success: function (data) {
+            stationsList = data
             ymaps.ready(function () {
                 MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                     '<div>$[properties.iconContent]</div>'
                 );
-                $.each(stationsList, function(index){
+                $.each(stationsList, function (index) {
                     let caption_pos = '№' + String(stationsList[index].id) + '<br/>' +
-                                      '---------------------------' + '<br/>' +
+                        '---------------------------' + '<br/>' +
                         'Адрес: ' + String(stationsList[index].address) + '<br/>' +
                         'Компания: ' + String(stationsList[index].company) + '<br/>' +
                         'Тип тока: ' + String(stationsList[index].plug_type).toUpperCase() + tokize(stationsList[index].plug_type) + '<br/>' +
-                        'Мощность: '+ String(stationsList[index].power).toUpperCase() + " кВт" + '<br/>' +
+                        'Мощность: ' + String(stationsList[index].power).toUpperCase() + " кВт" + '<br/>' +
                         '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                         '---------------------------' + '<br/>' +
                         String(stationsList[index].price) + ' руб. за 1 кВт';
                     let caption_neg = '№' + String(stationsList[index].id) + '<br/>' +
-                                      '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
+                        '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
                     if (stationsList[index].status === 1) {
                         build(stationsList[index], caption_pos, imgPos);
                         build(stationsList[index], caption_pos, imgPos);
@@ -369,4 +373,4 @@ $('#ok').click(function(){
 
 $('#window_repeat').click(function(){
 
-})}
+})
