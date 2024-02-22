@@ -1,88 +1,3 @@
-let capitals = {
-                "Белгородская область": "Белгород",
-                "Брянская область": "Брянск",
-                "Владимирская область": "Владимир",
-                "Воронежская область": "Воронеж",
-                "Ивановская область": "Иваново",
-                "Калужская область": "Калуга",
-                "Костромская область": "Кострома",
-                "Курская область": "Курск",
-                "Липецкая область": "Липецк",
-                "Москва и Московская область": "Москва",
-                "Орловская область": "Орёл",
-                "Рязанская область": "Рязань",
-                "Смоленская область": "Смоленск",
-                "Тамбовская область": "Тамбов",
-                "Тверская область": "Тверь",
-                "Тульская область": "Тула",
-                "Ярославская область": "Ярославль",
-                "Архангельская область": "Архангельск",
-                "Вологодская область": "Вологда",
-                "Калининградская область": "Калининград",
-                "Республика Карелия": "Петрозаводск",
-                "Республика Коми": "Сыктывкар",
-                "Санкт-Петербург и Ленинградская область": "Санкт-Петербург",
-                "Мурманская область": "Мурманск",
-                "Ненецкий автономный округ": "Салехард",
-                "Новгородская область": "Великий Новгород",
-                "Псковская область": "Псков",
-                "Санкт-Петербург": "Санкт-Петербург",
-                "Республика Башкортостан": "Уфа",
-                "Кировская область": "Киров",
-                "Республика Марий Эл": "Йошкар-Ола",
-                "Республика Мордовия": "Саранск",
-                "Нижегородская область": "Нижний Новгород",
-                "Оренбургская область": "Оренбург",
-                "Пензенская область": "Пенза",
-                "Пермский край": "Пермь",
-                "Самарская область": "Самара",
-                "Саратовская область": "Саратов",
-                "Республика Татарстан": "Казань",
-                "Удмуртская Республика": "Ижевск",
-                "Ульяновская область": "Ульяновск",
-                "Чувашская Республика": "Чебоксары",
-                "Курганская область": "Курган",
-                "Свердловская область": "Екатеринбург",
-                "Тюменская область": "Тюмень",
-                "Ханты-Мансийский автономный округ — Югра": "Ханты-мансийск",
-                "Челябинская область": "Челябиннск",
-                "Ямало-Ненецкий автономный округ": "Салехард",
-                "Республика Алтай": "Горно-Алтайск",
-                "Алтайский край": "Барнаул",
-                "Республика Бурятия": "Улан-Удэ",
-                "Забайкальский край": "Чита",
-                "Иркутская область": "Иркутск",
-                "Кемеровская область": "Кемерово",
-                "Красноярский край": "Красноярск",
-                "Новосибирская область": "Новосибирск",
-                "Омская область": "Омск",
-                "Томская область": "Томск",
-                "Республика Тыва": "Кызыл",
-                "Республика Хакасия": "Абакан",
-                "Амурская область": "Благовещенск",
-                "Еврейская автономная область": "Биробиджан",
-                "Камчатская область": "Петропавловск-Камчатский",
-                "Магаданская область": "Магадан",
-                "Приморский край": "Владивосток",
-                "Республика Саха (Якутия)": "Якутск",
-                "Сахалинская область": "Южно-Сахалинск",
-                "Хабаровский край": "Хабаровск",
-                "Чукотский автономный округ": "Анадырь",
-                "Республика Адыгея": "Майкоп",
-                "Астраханская область": "Астрахань",
-                "Волгоградская область": "Волгоград",
-                "Республика Калмыкия": "Элиста",
-                "Краснодарский край": "Краснодар",
-                "Ростовская область": "Ростов",
-                "Республика Дагестан": "Махачкала",
-                "Республика Ингушетия": "Магас",
-                "Кабардино — Балкарская Республика": "Нальчик",
-                "Карачаево — Черкесская Республика": "Черкесск",
-                "Республика Северная Осетия-Алания": "Владикавказ",
-                "Ставропольский край": "Ставрополь",
-                "Чеченская Республика": "Грозный"
-}
-
 let centers =  {"Майкоп": [44.6098268, 40.1006606],
                 "Горно-Алтайск": [51.9581028, 85.9603235],
                 "Барнаул": [53.3479968, 83.7798064],
@@ -226,73 +141,76 @@ let centers =  {"Майкоп": [44.6098268, 40.1006606],
 let long;
 let lati;
 $(document).ready(function() {
-    $('#loading').hide();
-    $('#booking').hide();
+    $("#loading").hide();
+    $("#booking").hide();
     if (YMaps.location) {
         long = YMaps.location.longitude;
         lati = YMaps.location.latitude;
-
-
         getTemperature(long, lati, getDateString(new Date()));
     }
     else
         alert("Пожалуйста, разрешите доступ к использованию Вашей геопозиции!");
 });
 
+$("#select-city").on("change", function () {
+    let cita = $("#select-city :selected").val();
+    centersList = centers[cita]
+    long = centersList[1];
+    lati = centersList[0];
+    getTemperature(long, lati, getDateString($("#trip_date").val()));
+});
+
+$("#trip_date").on("change", function () {
+    getTemperature(long, lati, getDateString($("#trip_date").val()));
+});
+
 function getTemperature(longitude, latitude, dateRef) {
     $.ajax({
-        method: 'POST',
-        url: 'http://localhost:8080/weather/getTemperature',
+        method: "POST",
+        url: "http://localhost:8080/weather/getTemperature",
         data: JSON.stringify(
             {location: {
-                               longitude: longitude,
-                               latitude: latitude
-                              },
-                    date: dateRef
-                   }),
-        dataType : 'json',
-        contentType: 'application/json',
+                    longitude: longitude,
+                    latitude: latitude
+                },
+                date: dateRef
+            }),
+        dataType : "json",
+        contentType: "application/json",
         success: function(data) {
             $(".weather__temp-number").val(data[0]);
 
-            let size  = $('.weather__temp-number').val().length;
+            let size  = $(".weather__temp-number").val().length;
             if (size === 1) {
-                $(".weather__temp input[type=number]").css('width', 15);
+                $(".weather__temp input[type=number]").css("width", 15);
             }
             if (size === 2) {
-                $(".weather__temp input[type=number]").css('width', 28);
+                $(".weather__temp input[type=number]").css("width", 28);
             }
             if (size === 3) {
-                $(".weather__temp input[type=number]").css('width', 38);
+                $(".weather__temp input[type=number]").css("width", 38);
             }
         }
     });
 }
 
-$('.city-select').on('change', function () {
-    let cita = $('.select-city').val();
-    alert(cita)
-    centersList = centers[cita]
-
-    long = centersList[0];
-    lati = centersList[1];
-    alert("d");
-    getTemperature(long, lati, getDateString($('#trip_date').val()));
-});
-
 function getDateString(dateRaw) {
-    let day = dateRaw.getDate();
-    if (day < 10) {
-        day = "0" + dayString.toString();
-    } else {
-        day = day.toString();
+    try {
+        let day = dateRaw.getDate();
+        if (day < 10) {
+            day = "0" + day.toString();
+        } else {
+            day = day.toString();
+        }
+        let month = dateRaw.getMonth() + 1;
+        if (month < 10) {
+            month = 0 + month.toString();
+        } else {
+            month = month.toString();
+        }
+        return dateRaw.getFullYear().toString() + "-" +
+            month + "-" + day;
+    } catch {
+        return dateRaw;
     }
-    let month = dateRaw.getMonth()+1;
-    if (month < 10) {
-        month = 0 + month.toString();
-    } else {
-        month = month.toString();
-    }
-    return dateRaw.getFullYear().toString() + "-" +
-        month + "-" + day;
 }

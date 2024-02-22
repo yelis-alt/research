@@ -12,12 +12,6 @@ let futureMonth = ("0" + (future.getMonth() + 1)).slice(-2);
 let futureDate = future.getFullYear()+"-"+(futureMonth)+"-"+(futureDay) ;
 $('#trip_date').attr({"max": futureDate});
 
-function preventSend(){
-    $('#submit').on('submit', function(event){
-        event.preventDefault();
-    });
-}
-
 $('.weather__temp-date-picker').change(function(){
     $(this).css('padding-top', 6);
 });
@@ -156,4 +150,10 @@ $('#select-city').change(function(){
     long = centers[tar][1]
     init();
     getStations();
-    })
+});
+
+function preventSend(){
+    $('#submit').on('submit', function(event){
+        event.preventDefault();
+    });
+}

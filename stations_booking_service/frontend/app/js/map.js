@@ -1,14 +1,74 @@
-//инициализация карты
-document.body.style.zoom = "125%";
-
-ymaps.ready(init, );
-
-function coordize(desc, n, p) {
-    return desc["properties"]["waypoints"][n]["coordinates"][p].toString();
-}
+ymaps.ready(init);
 
 let start;
 let finish;
+let imgPos = '/images/c.png';
+let imgNeg = '/images/d.png';
+let plug = 'TYPE_2';
+let plugPath = '/images/m_type2.png';
+let plugType = ["AC", "DC"];
+let fromPower = 10;
+let toPower = 50;
+let fromPrice = 0;
+let toPrice = 60;
+let geoObj = [];
+let stationsList;
+let starti;
+let finishi;
+let ids;
+let login;
+
+window.addEventListener('DOMContentLoaded', function() {
+    getStations();
+});
+
+$('[name="charger_selector"]').click(function() {
+    plug = $('input[name="charger_selector"]:checked').val();
+    plugPath = '/images/'+'m_'+
+        plug.replace("_", "").toLowerCase()+
+        '.png';
+    getStations();
+});
+
+$('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
+    '#fromInput_price, #toInput_price, ' +
+    '#fromSlider_kvt, #toSlider_kvt, ' +
+    '#fromSlider_price, #toSlider_price').on('change', function() {
+    plugType = getPlugTypesList();
+    fromPower = $('#fromInput_kvt').val();
+    toPower = $('#toInput_kvt').val();
+    fromPrice = $('#fromInput_price').val();
+    toPrice = $('#toInput_price').val();
+    getStations();
+});
+
+
+$('#ok').click(function(){
+    preventSend();
+    if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() != '') &
+        ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() != '')){
+        getRoute()
+    }else{
+        if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') &
+            ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() == '')) {
+            alert('Пожалуйста, выберите пункты отправления и прибытия');
+            preventSend();
+        }else{
+            if ($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') {
+                alert('Пожалуйста, выберите пункт отправления');
+                preventSend();
+            }else{
+                alert('Пожалуйста, выберите пункт прибытия');
+                preventSend();
+            }
+        }
+    }
+});
+
+function getCoordinates(desc, n, p) {
+    return desc["properties"]["waypoints"][n]["coordinates"][p].toString();
+}
+
 function init() {
     myMap = new ymaps.Map('map', {
         center: [lati, long],
@@ -47,40 +107,44 @@ function init() {
                 route.options.set('routeBalloonContentLayout', balloonContentLayout);
                 activeRoute.balloon.open();
                 let desc = route.model.getJson()
-                start = coordize(desc, 0, 1) + ',' + coordize(desc, 0, 0);
-                finish = coordize(desc, 1, 1) + ',' + coordize(desc, 1, 0);
+                start = getCoordinates(desc, 0, 1) + ',' + getCoordinates(desc, 0, 0);
+                finish = getCoordinates(desc, 1, 1) + ',' + getCoordinates(desc, 1, 0);
             }
         });
     });
 }
 
-//функции для работы с метками на карте
-let geoObj = [];
 function build(ind, caption, img){
-    myPlacemarkWithContent = new ymaps.Placemark([ind.latitude, ind.longitude], {
-        balloonContent: caption
-    }, {
-        iconLayout: 'default#imageWithContent',
-        iconImageHref: img,
-        iconImageSize: [25, 25],
-        iconImageOffset: [-10, -10],
-        iconContentOffset: [-8, 10],
-        iconContentLayout: MyIconContentLayout
-    });
-    myMap.geoObjects.add(myPlacemarkWithContent);
-    geoObj.push(myPlacemarkWithContent);
-}
+    for (let i = 0; i < 2 ; i++) {
+        myPlacemarkWithContent = new ymaps.Placemark([ind.longitude, ind.latitude], {
+            balloonContent: caption
+        }, {
+            iconLayout: 'default#imageWithContent',
+            iconImageHref: img,
+            iconImageSize: [25, 25],
+            iconImageOffset: [-10, -10],
+            iconContentOffset: [-8, 10],
+            iconContentLayout: MyIconContentLayout
+        });
 
-function eletypize(){
-    let acdc = [];
-    let electri = $('#plugType input[type=checkbox]:checked');
-    for (let i = 0; i < electri.length; i++) {
-        acdc.push(electri.eq(i).val());
+        console.log(myPlacemarkWithContent)
+        myMap.geoObjects.add(myPlacemarkWithContent);
+        geoObj.push(myPlacemarkWithContent);
     }
-    return acdc;
+
 }
 
-function tokize(str) {
+function getPlugTypesList(){
+    let plugTypesList = [];
+    let plugTypesSelect = $('#ac_dc input[type=checkbox]:checked');
+    for (let i = 0; i < plugTypesSelect.length; i++) {
+        plugTypesList.push(plugTypesSelect.eq(i).val());
+    }
+
+    return plugTypesList;
+}
+
+function getPlugTypeDesc(str) {
     if (str === 'AC') {
         return ' (Переменный ток)';
     } else {
@@ -93,17 +157,6 @@ function eraseMap(){
     init();
 }
 
-//нанесение меток на карту
-let imgPos = '/frontend/images/c.png';
-let imgNeg = '/frontend/images/d.png';
-let plug = 'TYPE_2';
-let plugPath = '/frontend/images/m_type2.png';
-let plugType = ["AC", "DC"];
-let fromPower = 10;
-let toPower = 50;
-let fromPrice = 0;
-let toPrice = 60;
-let stationsList;
 function getStations() {
     if (geoObj.length !== 0) {
         eraseMap();
@@ -115,10 +168,10 @@ function getStations() {
         data: JSON.stringify({
             plug: plug,
             plugType: plugType,
-            fromPower: fromPower,
-            toPower: toPower,
-            fromPrice: fromPrice,
-            toPrice: toPrice
+            fromPower: parseInt(fromPower),
+            toPower: parseInt(toPower),
+            fromPrice: parseInt(fromPrice),
+            toPrice: parseInt(toPrice)
         }),
         dataType: 'json',
         contentType: "application/json",
@@ -129,55 +182,27 @@ function getStations() {
                     '<div>$[properties.iconContent]</div>'
                 );
                 $.each(stationsList, function (index) {
-                    let caption_pos = '№' + String(stationsList[index].id) + '<br/>' +
-                        '---------------------------' + '<br/>' +
-                        'Адрес: ' + String(stationsList[index].address) + '<br/>' +
-                        'Компания: ' + String(stationsList[index].company) + '<br/>' +
-                        'Тип тока: ' + String(stationsList[index].plug_type).toUpperCase() + tokize(stationsList[index].plug_type) + '<br/>' +
-                        'Мощность: ' + String(stationsList[index].power).toUpperCase() + " кВт" + '<br/>' +
-                        '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
-                        '---------------------------' + '<br/>' +
-                        String(stationsList[index].price) + ' руб. за 1 кВт';
-                    let caption_neg = '№' + String(stationsList[index].id) + '<br/>' +
-                        '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
-                    if (stationsList[index].status === 1) {
-                        build(stationsList[index], caption_pos, imgPos);
-                        build(stationsList[index], caption_pos, imgPos);
+                    if (stationsList[index].status === true) {
+                        let caption = '№' + String(stationsList[index].id) + '<br/>' +
+                            '---------------------------' + '<br/>' +
+                            'Адрес: ' + String(stationsList[index].address) + '<br/>' +
+                            'Компания: ' + String(stationsList[index].company) + '<br/>' +
+                            'Тип тока: ' + String(stationsList[index].plugType).toUpperCase() + getPlugTypeDesc(stationsList[index].plugType) + '<br/>' +
+                            'Мощность: ' + String(stationsList[index].power).toUpperCase() + " кВт" + '<br/>' +
+                            '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
+                            '---------------------------' + '<br/>' +
+                            String(stationsList[index].price) + ' руб. за 1 кВт';
+                        build(stationsList[index], caption, imgPos);
                     } else {
-                        build(stationsList[index], caption_neg, imgNeg);
-                        build(stationsList[index], caption_neg, imgNeg);
+                        let caption = '№' + String(stationsList[index].id) + '<br/>' +
+                            '---------------------------' + '<br/>' + 'ЭЗС временно недоступна';
+                        build(stationsList[index], caption, imgNeg);
                     }
                 })
             });
         }
     })
 }
-
-window.addEventListener('DOMContentLoaded', function() {
-    getStations();
-});
-
-//изменение характеристик ЭЗС
-$('[name="charger_selector"]').click(function() {
-    plug = $('input[name="charger_selector"]:checked').val();
-    plugPath = '/frontend/images/'+'m_'+plug+'.png';
-    getStations();
-});
-
-$('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
-  '#fromInput_price, #toInput_price, ' +
-  '#fromSlider_kvt, #toSlider_kvt, ' +
-  '#fromSlider_price, #toSlider_price').on('change', function() {
-    plugType = '('+eletypize()+')';
-    plugType = plugType.replace('AC', '"AC"')
-                 .replace('DC','"DC"');
-    fromPower = $('#fromInput_kvt').val();
-    toPower = $('#toInput_kvt').val();
-    fromPrice = $('#fromInput_price').val();
-    toPrice = $('#toInput_price').val();
-    getStations();
-});
-
 
 function getRouteId(idsi) {
     let routeStat = [starti]
@@ -192,9 +217,6 @@ function getRouteId(idsi) {
     return routeStat
 }
 
-//построение оптимального маршрута
-let starti;
-let finishi;
 function initializeBooking(idsi) {
     starti = [start.split(',')[0], start.split(',')[1]]
     finishi = [finish.split(',')[0], finish.split(',')[1]]
@@ -212,7 +234,7 @@ function initializeBooking(idsi) {
             balloonContent: 'Cтарт'
         }, {
             iconLayout: 'default#imageWithContent',
-            iconImageHref: '/frontend/images/a.png',
+            iconImageHref: '/images/a.png',
             iconImageSize: [25, 25],
             iconImageOffset: [-10, -10],
             iconContentOffset: [-8, 10],
@@ -227,7 +249,7 @@ function initializeBooking(idsi) {
                 '---------------------------' + '<br/>' +
                 'Адрес: ' + String(stationsList[idf].address) + '<br/>' +
                 'Компания: ' + String(stationsList[idf].company) + '<br/>' +
-                'Тип тока: ' + String(stationsList[idf].plugType).toUpperCase() + tokize(stationsList[idf].plugType) + '<br/>' +
+                'Тип тока: ' + String(stationsList[idf].plugType).toUpperCase() + getPlugTypeDesc(stationsList[idf].plugType) + '<br/>' +
                 'Мощность: '+ String(stationsList[idf].power).toUpperCase() + " кВт" + '<br/>' +
                 '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                 '---------------------------' + '<br/>' +
@@ -236,7 +258,7 @@ function initializeBooking(idsi) {
                 balloonContent: capt
             }, {
                 iconLayout: 'default#imageWithContent',
-                iconImageHref: '/frontend/images/c.png',
+                iconImageHref: '/images/c.png',
                 iconImageSize: [25, 25],
                 iconImageOffset: [-10, -10],
                 iconContentOffset: [-8, 10],
@@ -248,7 +270,7 @@ function initializeBooking(idsi) {
             balloonContent: 'Финиш'
         }, {
             iconLayout: 'default#imageWithContent',
-            iconImageHref: '/frontend/images/b.png',
+            iconImageHref: '/images/b.png',
             iconImageSize: [25, 25],
             iconImageOffset: [-10, -10],
             iconContentOffset: [-8, 10],
@@ -257,7 +279,7 @@ function initializeBooking(idsi) {
     }
 }
 
-function booking_display(){
+function displayBooking(){
     $('#loading').hide();
     $('#map').show();
     $('.ymaps-2-1-79-map').remove();
@@ -298,7 +320,7 @@ function displayMap(){
     }, 1000);
 }
 
-function solution(){
+function getRoute(){
     let acc = $('.parameter__temp-acc').val();
     let maxacc = $('.parameter__temp-maxacc').val();
     let spend = $('.parameter__temp-spend').val();
@@ -338,39 +360,11 @@ function solution(){
             }else{
                 ids = ids.slice(1, -1);
                 $('.booking__station input[type=number]').val(ids[0]);
-                booking_panel();
-                booking_display();
-                extender();
+                displayBookingPanel();
+                displayBooking();
+                extend();
                 displayMap();
             }
         }
     });
 }
-//подтверждение маршрута
-let ids;
-let login;
-$('#ok').click(function(){
-    preventSend();
-    if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() != '') &
-        ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() != '')){
-        solution()
-        }else{
-        if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') &
-            ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() == '')) {
-            alert('Пожалуйста, выберите пункты отправления и прибытия');
-            preventSend();
-        }else{
-            if ($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') {
-                alert('Пожалуйста, выберите пункт отправления');
-                preventSend();
-            }else{
-                alert('Пожалуйста, выберите пункт прибытия');
-                preventSend();
-            }
-        }
-    }
-});
-
-$('#window_repeat').click(function(){
-
-})

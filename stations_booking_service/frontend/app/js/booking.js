@@ -1,3 +1,108 @@
+let cell = '.booking';
+let currentId;
+let posId;
+let nextId;
+let windows = [];
+let resp;
+let schedule = {};
+let availWin = {};
+let indexWindows = [];
+let subWIn = {}
+let id = $('.booking__station input[type=number]');
+
+let input = $('.booking');
+input.change(function() {
+    $(indexWindows).each(function(index, value) {
+        if (input.eq(index).is(':checked')) {
+            $(cell+value.toString()).css({
+                'opacity': '1',
+                'border': 'solid rgba(0, 0, 0, 1) 2px',
+            });
+        }else{
+            $(cell+value.toString()).css({
+                'opacity': '0.6',
+                'border': 'solid rgba(0, 0, 0, 0.6) 2px',
+            });
+        }
+    });
+});
+
+$('.booking__station-back').click(function(){
+    currentId = id.val();
+    posId = $.inArray(currentId, ids);
+    if (posId === 0){
+        nextId = $(ids).get(-1);
+        id.val(nextId);
+        extend();
+    }
+    else{
+        id.val($(ids).get(posId-1));
+        extend();
+    }
+    slideWindows();
+});
+
+$('.booking__station-forward').click(function(){
+    currentId = id.val();
+    posId = $.inArray(currentId, ids);
+    if (posId === $(ids).length-1){
+        nextId = $(ids).get(0);
+        id.val(nextId);
+        extend();
+    }
+    else{
+        id.val($(ids).get(posId+1));
+        extend();
+    }
+    slideWindows();
+});
+
+
+$('#register').on('submit', function (event) {
+    event.preventDefault();
+});
+
+$('#window_send').click(function() {
+    if ($('.booking__period input:checked').length === 0) {
+        alert('Выберите хотя бы одно окно брони');
+    } else {
+        endWindow();
+        $.ajax({
+            type: 'POST',
+            url: 'schedule',
+            data: JSON.stringify({resp: resp}),
+            dataType : 'json',
+            contentType: 'application/json',
+            error: function () {
+                setTimeout(function(){
+                    alert('К сожалению, не удалось зарегистрировать Вашу бронь');
+                }, 1000);
+            },
+            success: function () {
+                setTimeout(function(){
+                    $('#register').unbind('submit').submit();
+                    alert('Ваш уникальный логин брони: ' + login);
+                }, 1000);
+            }
+        })
+    }
+});
+
+$('#window_repeat').click(function() {
+    $('#register').on('submit', function (event) {
+        event.preventDefault();
+    });
+    $('#mapi').attr("id","map");
+    $(".mapi__land-inner").attr("class", '.ymaps-2-1-79-map.' +
+        'ymaps-2-1-79-i-ua_js_yes.' +
+        'ymaps-2-1-79-map-bg.' +
+        'ymaps-2-1-79-islets_map-lang-ru');
+    $('.booking').hide();
+    $('#map').hide();
+    dropMin();
+    getRoute();
+});
+
 function trail_null(word){
     if (word < 10){
         word = '0' + word;
@@ -160,14 +265,8 @@ function endWindow(){
     })
 }
 
-let windows = [];
-let resp;
-let schedule = {};
-let availWin = {};
-let indexWindows = [];
-let subWIn = {}
 //getJsonIds();
-function booking_panel(){
+function displayBookingPanel(){
     setWindows();
     filterWindows();
     drawWIndows();
@@ -176,65 +275,13 @@ function booking_panel(){
     slideWindows();
 }
 
-let cell = '.booking';
-let input = $('.booking');
-input.change(function() {
-    $(indexWindows).each(function(index, value) {
-        if (input.eq(index).is(':checked')) {
-            $(cell+value.toString()).css({
-                'opacity': '1',
-                'border': 'solid rgba(0, 0, 0, 1) 2px',
-            });
-        }else{
-            $(cell+value.toString()).css({
-                'opacity': '0.6',
-                'border': 'solid rgba(0, 0, 0, 0.6) 2px',
-            });
-        }
-    });
-});
-
-let id = $('.booking__station input[type=number]');
-function extender(){
+function extend(){
     let digits = id.val().toString().length;
     let wid =  Number(digits)*10;
     id.css({
         'width': wid
     });
 }
-
-let currentId;
-let posId;
-let nextId;
-$('.booking__station-back').click(function(){
-    currentId = id.val();
-    posId = $.inArray(currentId, ids);
-    if (posId === 0){
-        nextId = $(ids).get(-1);
-        id.val(nextId);
-        extender();
-    }
-    else{
-        id.val($(ids).get(posId-1));
-        extender();
-    }
-    slideWindows();
-});
-
-$('.booking__station-forward').click(function(){
-    currentId = id.val();
-    posId = $.inArray(currentId, ids);
-    if (posId === $(ids).length-1){
-        nextId = $(ids).get(0);
-        id.val(nextId);
-        extender();
-    }
-    else{
-        id.val($(ids).get(posId+1));
-        extender();
-    }
-    slideWindows();
-});
 
 function dropMin(){
     let comWin = {}
@@ -256,48 +303,3 @@ function dropMin(){
     let idDel = stationsList.findIndex(obj => obj.id === minEl);
     stationsList.splice(idDel, 1);
 }
-
-$('#register').on('submit', function (event) {
-    event.preventDefault();
-});
-
-$('#window_send').click(function() {
-    if ($('.booking__period input:checked').length === 0) {
-        alert('Выберите хотя бы одно окно брони');
-    } else {
-        endWindow();
-        $.ajax({
-            type: 'POST',
-            url: 'schedule',
-            data: JSON.stringify({resp: resp}),
-            dataType : 'json',
-            contentType: 'application/json',
-            error: function () {
-                setTimeout(function(){
-                        alert('К сожалению, не удалось зарегистрировать Вашу бронь');
-                }, 1000);
-            },
-            success: function () {
-                setTimeout(function(){
-                        $('#register').unbind('submit').submit();
-                        alert('Ваш уникальный логин брони: ' + login);
-                }, 1000);
-            }
-        })
-    }
-});
-
-$('#window_repeat').click(function() {
-    $('#register').on('submit', function (event) {
-        event.preventDefault();
-    });
-    $('#mapi').attr("id","map");
-    $(".mapi__land-inner").attr("class", '.ymaps-2-1-79-map.' +
-                                'ymaps-2-1-79-i-ua_js_yes.' +
-                                'ymaps-2-1-79-map-bg.' +
-                                'ymaps-2-1-79-islets_map-lang-ru');
-    $('.booking').hide();
-    $('#map').hide();
-    dropMin();
-    solution();
-});

@@ -2,16 +2,16 @@ function openPage(pageName, elmnt, color) {
     let i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (let i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
+        tabcontent[i].style.display = "none";
     }
     tablinks = document.getElementsByClassName("tablink");
     for (let i = 0; i < tablinks.length; i++) {
-      tablinks[i].style.backgroundColor = "";
+        tablinks[i].style.backgroundColor = "";
     }
     document.getElementById(pageName).style.display = "block";
-  }
-  
-  document.getElementById("defaultOpen").click();
+}
+
+document.getElementById("defaultOpen").click();
 
 $("#defaultOpen").click(function(){
     $("#defaultOpen").css({

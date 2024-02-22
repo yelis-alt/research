@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum Plug {
     TYPE_2("type2"),
     CHADEMO("chademo"),
-    CSSCOMBO_1("ccscombo1"),
-    CSSCOMBO_2("ccscombo2"),
+    CCSCOMBO_1("ccscombo1"),
+    CCSCOMBO_2("ccscombo2"),
     SAEJ_1772("saej1772"),
     TESLA("tesla"),
     GBTAC("gbtac"),
