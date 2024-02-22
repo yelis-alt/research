@@ -88,20 +88,24 @@ $('#window_send').click(function() {
     }
 });
 
-$('#window_repeat').click(function() {
-    $('#register').on('submit', function (event) {
-        event.preventDefault();
+function displayBooking(){
+    $('#loading').hide();
+    $('#map').show();
+    $('.ymaps-2-1-79-map').remove();
+    let idsi = ids;
+    initializeBooking(idsi);
+    $('#map').css({
+        'margin-top': '5.5px',
+        'height': '523px'
     });
-    $('#mapi').attr("id","map");
-    $(".mapi__land-inner").attr("class", '.ymaps-2-1-79-map.' +
-        'ymaps-2-1-79-i-ua_js_yes.' +
-        'ymaps-2-1-79-map-bg.' +
-        'ymaps-2-1-79-islets_map-lang-ru');
-    $('.booking').hide();
-    $('#map').hide();
-    dropMin();
-    getRoute();
-});
+    $('.ymaps-2-1-79-islets_icon-with-caption').css({
+        'display': 'none'
+    });
+    $('#booking').show();
+    $('.ymaps-2-1-79-map').css({
+        'height': '518px'
+    });
+}
 
 function trail_null(word){
     if (word < 10){
@@ -281,25 +285,4 @@ function extend(){
     id.css({
         'width': wid
     });
-}
-
-function dropMin(){
-    let comWin = {}
-    $.each(ids, function(index, value){
-        comWin[value] = 0;
-    });
-    $.each(indexWindows, function(index, value){
-        let idt = value.split('_')[1];
-        comWin[idt] += 1;
-    });
-    let minWin = 100000000;
-    let minEl;
-    $.each(Object.keys(comWin), function(index, value){
-        if (comWin[value] < minWin){
-            minWin = comWin[value];
-            minEl = value;
-        }
-    });
-    let idDel = stationsList.findIndex(obj => obj.id === minEl);
-    stationsList.splice(idDel, 1);
 }

@@ -2,6 +2,12 @@ ymaps.ready(init);
 
 let start;
 let finish;
+let starti;
+let finishi;
+let ids;
+let login;
+let stationsList;
+
 let imgPos = '/images/c.png';
 let imgNeg = '/images/d.png';
 let plug = 'TYPE_2';
@@ -12,11 +18,6 @@ let toPower = 50;
 let fromPrice = 0;
 let toPrice = 60;
 let geoObj = [];
-let stationsList;
-let starti;
-let finishi;
-let ids;
-let login;
 
 window.addEventListener('DOMContentLoaded', function() {
     getStations();
@@ -40,29 +41,6 @@ $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
     fromPrice = $('#fromInput_price').val();
     toPrice = $('#toInput_price').val();
     getStations();
-});
-
-
-$('#ok').click(function(){
-    preventSend();
-    if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() != '') &
-        ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() != '')){
-        getRoute()
-    }else{
-        if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') &
-            ($('.ymaps-2-1-79-route-panel-input__input').eq(1).val() == '')) {
-            alert('Пожалуйста, выберите пункты отправления и прибытия');
-            preventSend();
-        }else{
-            if ($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() == '') {
-                alert('Пожалуйста, выберите пункт отправления');
-                preventSend();
-            }else{
-                alert('Пожалуйста, выберите пункт прибытия');
-                preventSend();
-            }
-        }
-    }
 });
 
 function getCoordinates(desc, n, p) {
@@ -204,17 +182,27 @@ function getStations() {
     })
 }
 
-function getRouteId(idsi) {
-    let routeStat = [starti]
-    $.each(idsi, function (index, value) {
-        let idf = stationsList.findIndex(obj => obj.id === value);
-        let next_point = {type: 'viaPoint',
-                          point: [stationsList[idf].latitude, stationsList[idf].longitude]};
+function displayMap(){
+    setTimeout(function() {
+        $('.ymaps-2-1-79-islets_icon-with-caption').remove();
+        $('.ymaps-2-1-79-image').remove();
+        $('#map').attr("id","mapi");
+        $('.ymaps-2-1-79-map.' +
+            'ymaps-2-1-79-i-ua_js_yes.' +
+            'ymaps-2-1-79-map-bg.' +
+            'ymaps-2-1-79-islets_map-lang-ru').attr("class","mapi__land-inner");
+        if ($(window).width() < 1024){
+            $('.ymaps-2-1-79-map').css({
+                'height': '613px'
+            });
+        }
+        setTimeout(function(){
+            if (ids.length === 0){
+                alert('Для прохождения маршрута подзарядок не требуется')
+            }
+        }, 1000)
 
-        routeStat.push(next_point);
-    });
-    routeStat.push(finishi)
-    return routeStat
+    }, 1000);
 }
 
 function initializeBooking(idsi) {
@@ -277,94 +265,4 @@ function initializeBooking(idsi) {
             iconContentLayout: MyIconContentLayout
         }));
     }
-}
-
-function displayBooking(){
-    $('#loading').hide();
-    $('#map').show();
-    $('.ymaps-2-1-79-map').remove();
-    let idsi = ids;
-    initializeBooking(idsi);
-    $('#map').css({
-        'margin-top': '5.5px',
-        'height': '523px'
-    });
-    $('.ymaps-2-1-79-islets_icon-with-caption').css({
-        'display': 'none'
-    });
-    $('#booking').show();
-    $('.ymaps-2-1-79-map').css({
-        'height': '518px'
-    });
-}
-function displayMap(){
-    setTimeout(function() {
-        $('.ymaps-2-1-79-islets_icon-with-caption').remove();
-        $('.ymaps-2-1-79-image').remove();
-        $('#map').attr("id","mapi");
-        $('.ymaps-2-1-79-map.' +
-            'ymaps-2-1-79-i-ua_js_yes.' +
-            'ymaps-2-1-79-map-bg.' +
-            'ymaps-2-1-79-islets_map-lang-ru').attr("class","mapi__land-inner");
-        if ($(window).width() < 1024){
-            $('.ymaps-2-1-79-map').css({
-                'height': '613px'
-            });
-        }
-        setTimeout(function(){
-            if (ids.length === 0){
-                alert('Для прохождения маршрута подзарядок не требуется')
-            }
-        }, 1000)
-
-    }, 1000);
-}
-
-function getRoute(){
-    let acc = $('.parameter__temp-acc').val();
-    let maxacc = $('.parameter__temp-maxacc').val();
-    let spend = $('.parameter__temp-spend').val();
-    let grad = $('.weather__temp-number').val();
-    let data = {jsc: stationsList,
-                acc: acc,
-                maxacc: maxacc,
-                spend: spend,
-                grad: grad,
-                start: start,
-                finish: finish};
-    $('.ymaps-2-1-79-route-panel__clear').click();
-    $('.tabs').hide();
-    $('.ymaps-2-1-79-controls__control_toolbar').hide();
-    $('.routing__legendbox').hide();
-    $('.ymaps-2-1-79-zoom').hide();
-    $('#ok').hide();
-    $('#map').hide();
-    $('#loading').show();
-    $('.textbox').css({
-        'margin-top': '3.25px'
-    });
-    $.ajax({
-        type:'POST',
-        url: 'http://localhost:5000/',
-        dataType : 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function(data){
-            login = Object.keys(data)[0];
-            ids = data[login];
-            if (ids === 'impossible'){
-                alert('К сожалению, согласно заданными Вами параметрами ' +
-                    'построение маршрута невозможно.\n' +
-                    'Вы можете поменять их и попробовать снова.');
-                window.location.reload();
-            }else{
-                ids = ids.slice(1, -1);
-                $('.booking__station input[type=number]').val(ids[0]);
-                displayBookingPanel();
-                displayBooking();
-                extend();
-                displayMap();
-            }
-        }
-    });
 }
