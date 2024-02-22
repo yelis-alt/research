@@ -270,19 +270,13 @@ function getTemperature(longitude, latitude, dateRef) {
 }
 
 $('.city-select').on('change', function () {
-    let cita = YMaps.location.city;
-    let obl = YMaps.location.region;
-    if (dict[$('#select-city')].val(cita)>0) {
-        $('#select-city').val(cita);
-    }
-    else {
-        let cap = capitals[obl];
-        $('#select-city').val(cap);
-    }
+    let cita = $('.select-city').val();
+    alert(cita)
+    centersList = centers[cita]
 
-    let centersList = centers[$('#select-city').val()];
-    long = centersList[0]
-    lati = centersList[1]
+    long = centersList[0];
+    lati = centersList[1];
+    alert("d");
     getTemperature(long, lati, getDateString($('#trip_date').val()));
 });
 
