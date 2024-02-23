@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class RoutingController {
     private final RoutingService routingService;
 
-    @PostMapping(value = "/getFilteredStationsList")
+    @PostMapping(value = "/getFilteredStations")
     public List<Station> getFilteredStationsList(@Valid @RequestBody FilterStationDTO filterStation) {
 
         return routingService.getFilteredStationsList(filterStation);

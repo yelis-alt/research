@@ -36,8 +36,8 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String ROUTES = "routes";
     private static final String SUMMARY = "summary";
     private static final String CHARGE_DURATION = "chargeDuration";
-    private static final String START_POINT = "start point";
-    private static final String FINISH_POINT = "finish point";
+    private static final String START_POINT = "startCoords point";
+    private static final String FINISH_POINT = "finishCoords point";
     private static final String DECIMAL_POINT = "\\.";
     private static final double zeroDouble = 0.0;
     private static final int zeroInt = 0;
@@ -78,7 +78,7 @@ public class RoutingServiceImpl implements RoutingService {
         double temp = routeRequest.getTemperature();
         double accBegin = accMax * routeRequest.getAccLevel() / 100;
 
-        // try to build direct route between start point and finish point
+        // try to build direct route between startCoords point and finishCoords point
         Station startPoint = new Station();
         startPoint.setId(0);
         startPoint.setStatus(true);

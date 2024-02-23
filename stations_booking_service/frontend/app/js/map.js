@@ -1,10 +1,9 @@
 ymaps.ready(init);
 
-let start;
-let finish;
-let starti;
-let finishi;
-let ids;
+let startCoords;
+let finishCoords;
+let startCoordsBooking;
+let finishCoordsBooking;
 let login;
 let stationsList;
 
@@ -18,9 +17,11 @@ let toPower = 50;
 let fromPrice = 0;
 let toPrice = 60;
 let geoObj = [];
+let stationIdsList = []
+let stationNodesList = []
 
 window.addEventListener('DOMContentLoaded', function() {
-    getStations();
+    getStationsList();
 });
 
 $('[name="charger_selector"]').click(function() {
@@ -28,7 +29,7 @@ $('[name="charger_selector"]').click(function() {
     plugPath = '/images/'+'m_'+
         plug.replace("_", "").toLowerCase()+
         '.png';
-    getStations();
+    getStationsList();
 });
 
 $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
@@ -40,11 +41,11 @@ $('#ac, #dc, #fromInput_kvt, #toInput_kvt, ' +
     toPower = $('#toInput_kvt').val();
     fromPrice = $('#fromInput_price').val();
     toPrice = $('#toInput_price').val();
-    getStations();
+    getStationsList();
 });
 
 function getCoordinates(desc, n, p) {
-    return desc["properties"]["waypoints"][n]["coordinates"][p].toString();
+    return desc["properties"]["waypoints"][n]["coordinates"][p];
 }
 
 function init() {
@@ -85,8 +86,14 @@ function init() {
                 route.options.set('routeBalloonContentLayout', balloonContentLayout);
                 activeRoute.balloon.open();
                 let desc = route.model.getJson()
-                start = getCoordinates(desc, 0, 1) + ',' + getCoordinates(desc, 0, 0);
-                finish = getCoordinates(desc, 1, 1) + ',' + getCoordinates(desc, 1, 0);
+                startCoords = {
+                    "longitude": getCoordinates(desc, 0, 1).toFixed(6),
+                    "latitude": getCoordinates(desc, 0, 0).toFixed(6)
+                }
+                finishCoords = {
+                    "longitude":getCoordinates(desc, 1, 1).toFixed(6),
+                    "latitude": getCoordinates(desc, 1, 0).toFixed(6)
+                }
             }
         });
     });
@@ -104,8 +111,6 @@ function build(ind, caption, img){
             iconContentOffset: [-8, 10],
             iconContentLayout: MyIconContentLayout
         });
-
-        console.log(myPlacemarkWithContent)
         myMap.geoObjects.add(myPlacemarkWithContent);
         geoObj.push(myPlacemarkWithContent);
     }
@@ -135,22 +140,24 @@ function eraseMap(){
     init();
 }
 
-function getStations() {
+function getStationsList() {
     if (geoObj.length !== 0) {
         eraseMap();
     }
 
-    $.ajax({
-        type: 'POST',
-        url: 'http://localhost:8080/routing/getFilteredStationsList',
-        data: JSON.stringify({
+    let stationsListRequest =
+        {
             plug: plug,
             plugType: plugType,
             fromPower: parseInt(fromPower),
             toPower: parseInt(toPower),
             fromPrice: parseInt(fromPrice),
             toPrice: parseInt(toPrice)
-        }),
+        }
+    $.ajax({
+        type: 'POST',
+        url: 'http://localhost:8080/routing/getFilteredStations',
+        data: JSON.stringify(stationsListRequest),
         dataType: 'json',
         contentType: "application/json",
         success: function (data) {
@@ -197,7 +204,7 @@ function displayMap(){
             });
         }
         setTimeout(function(){
-            if (ids.length === 0){
+            if (stationNodesList.length === 0){
                 alert('Для прохождения маршрута подзарядок не требуется')
             }
         }, 1000)
@@ -205,20 +212,21 @@ function displayMap(){
     }, 1000);
 }
 
-function initializeBooking(idsi) {
-    starti = [start.split(',')[0], start.split(',')[1]]
-    finishi = [finish.split(',')[0], finish.split(',')[1]]
+function initializeBooking(stationIdsList) {
+    getTimeWindows();
+    startCoordsBooking = [startCoords["longitude"], startCoords["latitude"]]
+    finishCoordsBooking = [finishCoords["longitude"], finishCoords["latitude"]]
     let myMap = new ymaps.Map("map", {
-        center: starti,
+        center: startCoordsBooking,
         zoom: 13
     });
-    ymaps.route(getRouteId(idsi), {
+    ymaps.route(getRouteId(stationIdsList), {
         mapStateAutoApply: true
     }).then(function (route) {
         myMap.geoObjects.add(route);
     });
     for (let i = 0; i < 2; i++){
-        myMap.geoObjects.add(new ymaps.Placemark(starti, {
+        myMap.geoObjects.add(new ymaps.Placemark(startCoordsBooking, {
             balloonContent: 'Cтарт'
         }, {
             iconLayout: 'default#imageWithContent',
@@ -228,22 +236,24 @@ function initializeBooking(idsi) {
             iconContentOffset: [-8, 10],
             iconContentLayout: MyIconContentLayout
         }));
-        $.each(ids, function (index, value){
-            let idf = stationsList.findIndex(obj => obj.id === value)
+        $.each(stationIdsList, function (index, value){
+            let stationIndex = stationsList.findIndex(station => station.id === value)
             MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                 '<div>$[properties.iconContent]</div>'
             );
-            let capt = '№ ' + String(stationsList[idf].id) + '<br/>' +
+            let caption = '№ ' + String(stationsList[stationIndex].id) + '<br/>' +
                 '---------------------------' + '<br/>' +
-                'Адрес: ' + String(stationsList[idf].address) + '<br/>' +
-                'Компания: ' + String(stationsList[idf].company) + '<br/>' +
-                'Тип тока: ' + String(stationsList[idf].plugType).toUpperCase() + getPlugTypeDesc(stationsList[idf].plugType) + '<br/>' +
-                'Мощность: '+ String(stationsList[idf].power).toUpperCase() + " кВт" + '<br/>' +
+                'Адрес: ' + String(stationsList[stationIndex].address) + '<br/>' +
+                'Компания: ' + String(stationsList[stationIndex].company) + '<br/>' +
+                'Тип тока: ' + String(stationsList[stationIndex].plugType).toUpperCase() +
+                getPlugTypeDesc(stationsList[stationIndex].plugType) + '<br/>' +
+                'Мощность: '+ String(stationsList[stationIndex].power).toUpperCase() + " кВт" + '<br/>' +
                 '<img src=' + '"' + plugPath + '"' + '</img>' + '<br/>' +
                 '---------------------------' + '<br/>' +
-                String(stationsList[idf].price) + ' руб. за 1 кВт';
-            myPlacemarkWithContent = new ymaps.Placemark([stationsList[idf].latitude, stationsList[idf].longitude], {
-                balloonContent: capt
+                String(stationsList[stationIndex].price) + ' руб. за 1 кВт';
+            myPlacemarkWithContent = new ymaps.Placemark([stationsList[stationIndex].longitude,
+                                                          stationsList[stationIndex].latitude], {
+                balloonContent: caption
             }, {
                 iconLayout: 'default#imageWithContent',
                 iconImageHref: '/images/c.png',
@@ -254,7 +264,7 @@ function initializeBooking(idsi) {
             });
             myMap.geoObjects.add(myPlacemarkWithContent);
         });
-        myMap.geoObjects.add(new ymaps.Placemark(finishi, {
+        myMap.geoObjects.add(new ymaps.Placemark(finishCoordsBooking, {
             balloonContent: 'Финиш'
         }, {
             iconLayout: 'default#imageWithContent',

@@ -149,7 +149,7 @@ $('#select-city').change(function(){
     lati = centers[tar][0]
     long = centers[tar][1]
     init();
-    getStations();
+    getStationsList();
 });
 
 function preventSend(){

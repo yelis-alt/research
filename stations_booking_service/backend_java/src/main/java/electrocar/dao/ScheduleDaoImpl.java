@@ -15,17 +15,17 @@ public class ScheduleDaoImpl implements ScheduleDao {
     private final SimpleBeanRowMapper<Schedule> rowMapper = new SimpleBeanRowMapper<>(Schedule.class);
 
     @Override
-    public List<Schedule> getTimeWindowsByDateAndStationId(String date, Integer stationId) {
+    public List<Schedule> getTimeWindowsByDateAndStationIdsList(String date, List<Integer> stationIdsList) {
         String sql =
                 """
 					SELECT * FROM electrocar.schedule
 					WHERE DATE(datetime_from)::TEXT = :date AND
-						id_station = :stationId
+						id_station IN (:stationIdsList)
 					""";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("date", date);
-        params.addValue("stationId", stationId);
+        params.addValue("stationIdsList", stationIdsList);
 
         return jdbcTemplate.query(sql, params, rowMapper);
     }

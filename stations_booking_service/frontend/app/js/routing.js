@@ -31,29 +31,32 @@ $('#window_repeat').click(function() {
         'ymaps-2-1-79-islets_map-lang-ru');
     $('.booking').hide();
     $('#map').hide();
+
     dropMin();
     getRoute();
 });
 
-function getRouteId(idsi) {
-    let routeStat = [starti]
-    $.each(idsi, function (index, value) {
-        let idf = stationsList.findIndex(obj => obj.id === value);
-        let next_point = {type: 'viaPoint',
-            point: [stationsList[idf].latitude, stationsList[idf].longitude]};
+function getRouteId(stationIdsList) {
+    let routeStat = [startCoordsBooking];
+    $.each(stationIdsList, function (index, value) {
+        let stationIndex = stationsList.findIndex(station => station.id === value);
+        let nextPoint =
+            {type: 'viaPoint',
+            point: [stationsList[stationIndex].longitude, stationsList[stationIndex].latitude]};
 
-        routeStat.push(next_point);
+        routeStat.push(nextPoint);
     });
-    routeStat.push(finishi)
-    return routeStat
+    routeStat.push(finishCoordsBooking);
+
+    return routeStat;
 }
 
 function dropMin(){
     let comWin = {}
-    $.each(ids, function(index, value){
+    $.each(stationIdsList, function(index, value){
         comWin[value] = 0;
     });
-    $.each(indexWindows, function(index, value){
+    $.each(indexWindowsList, function(index, value){
         let idt = value.split('_')[1];
         comWin[idt] += 1;
     });
@@ -70,17 +73,18 @@ function dropMin(){
 }
 
 function getRoute(){
-    let acc = $('.parameter__temp-acc').val();
-    let maxacc = $('.parameter__temp-maxacc').val();
-    let spend = $('.parameter__temp-spend').val();
-    let grad = $('.weather__temp-number').val();
-    let data = {jsc: stationsList,
-        acc: acc,
-        maxacc: maxacc,
-        spend: spend,
-        grad: grad,
-        start: start,
-        finish: finish};
+    let accLevel = $('.parameter__temp-acc').val();
+    let accMax = $('.parameter__temp-maxacc').val();
+    let spendOpt = $('.parameter__temp-spend').val();
+    let temperature = $('.weather__temp-number').val();
+    let routeRequest = {
+        startCoords: startCoords,
+        finishCoords: finishCoords,
+        accLevel: parseInt(accLevel),
+        accMax: parseFloat(accMax).toFixed(1),
+        spendOpt: parseFloat(spendOpt).toFixed(1),
+        temperature: parseFloat(temperature).toFixed(1),
+        filteredStationsList: stationsList};
     $('.ymaps-2-1-79-route-panel__clear').click();
     $('.tabs').hide();
     $('.ymaps-2-1-79-controls__control_toolbar').hide();
@@ -94,21 +98,100 @@ function getRoute(){
     });
     $.ajax({
         type:'POST',
-        url: 'http://localhost:5000/',
+        url: 'http://localhost:8080/routing/getRoute',
         dataType : 'json',
         contentType: 'application/json',
-        data: JSON.stringify(data),
+        data: JSON.stringify(routeRequest),
         success: function(data){
-            login = Object.keys(data)[0];
-            ids = data[login];
-            if (ids === 'impossible'){
+            data = [
+                {
+                    "routeNode": {
+                        "id": 0,
+                        "address": null,
+                        "longitude": 59.852021,
+                        "latitude": 30.375202,
+                        "price": null,
+                        "company": null,
+                        "plug": null,
+                        "power": null,
+                        "plugType": null,
+                        "status": true
+                    },
+                    "distance": 0,
+                    "cost": 0,
+                    "chargeDuration": {
+                        "hours": 0,
+                        "minutes": 0
+                    },
+                    "reachDuration": {
+                        "hours": 0,
+                        "minutes": 0
+                    }
+                },
+                {
+                    "routeNode": {
+                        "id": 62,
+                        "address": "г. Санкт-Петербург, ул. Костюшко, 1к1",
+                        "longitude": 59.847551,
+                        "latitude": 30.297171,
+                        "price": 28,
+                        "company": "Ленэнерго",
+                        "plug": "TYPE_2",
+                        "power": 43,
+                        "plugType": "AC",
+                        "status": true
+                    },
+                    "distance": 5.49,
+                    "cost": 761.12,
+                    "chargeDuration": {
+                        "hours": 1,
+                        "minutes": 13
+                    },
+                    "reachDuration": {
+                        "hours": 0,
+                        "minutes": 14
+                    }
+                },
+                {
+                    "routeNode": {
+                        "id": 2147483647,
+                        "address": null,
+                        "longitude": 60.023607,
+                        "latitude": 30.22002,
+                        "price": null,
+                        "company": null,
+                        "plug": null,
+                        "power": null,
+                        "plugType": null,
+                        "status": true
+                    },
+                    "distance": 29.450000000000003,
+                    "cost": 850.91,
+                    "chargeDuration": {
+                        "hours": 0,
+                        "minutes": 0
+                    },
+                    "reachDuration": {
+                        "hours": 1,
+                        "minutes": 50
+                    }
+                }
+            ]
+            if (data.length === 0){
                 alert('К сожалению, согласно заданными Вами параметрами ' +
                     'построение маршрута невозможно.\n' +
                     'Вы можете поменять их и попробовать снова.');
                 window.location.reload();
             }else{
-                ids = ids.slice(1, -1);
-                $('.booking__station input[type=number]').val(ids[0]);
+                stationNodesList = data.slice(1, -1);
+                if (stationNodesList.length !== 0) {
+                    $(stationNodesList).each(function (ind) {
+                        stationIdsList.push(stationNodesList[ind].routeNode.id)
+                    });
+                    $('.booking__station input[type=number]').val(stationIdsList[0]);
+                } else {
+                    $('.booking__station input[type=number]').val("-");
+                }
                 displayBookingPanel();
                 displayBooking();
                 extend();

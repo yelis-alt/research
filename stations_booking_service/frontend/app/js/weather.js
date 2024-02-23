@@ -165,16 +165,18 @@ $("#trip_date").on("change", function () {
 });
 
 function getTemperature(longitude, latitude, dateRef) {
+    let weatherRequest =
+        {
+            location: {
+                longitude: longitude,
+                latitude: latitude
+            },
+            date: dateRef
+        }
     $.ajax({
         method: "POST",
         url: "http://localhost:8080/weather/getTemperature",
-        data: JSON.stringify(
-            {location: {
-                    longitude: longitude,
-                    latitude: latitude
-                },
-                date: dateRef
-            }),
+        data: JSON.stringify(weatherRequest),
         dataType : "json",
         contentType: "application/json",
         success: function(data) {

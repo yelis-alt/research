@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@Table(name = "station", schema = "electrocar")
+@Table(name = "schedule", schema = "electrocar")
 public class Schedule {
     @Id
     @Column(name = "id", nullable = false)
@@ -21,9 +21,8 @@ public class Schedule {
     @Column(name = "code", nullable = false)
     private String code;
 
-    @ManyToOne
-    @JoinColumn(name = "id_station", referencedColumnName = "id")
-    private Station station;
+    @Column(name = "id_station", nullable = false)
+    private Integer idStation;
 
     @Column(name = "datetime_from", nullable = false)
     private Instant datetimeFrom;

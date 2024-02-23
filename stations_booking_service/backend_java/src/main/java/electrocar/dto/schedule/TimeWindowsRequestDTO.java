@@ -1,5 +1,6 @@
 package electrocar.dto.schedule;
 
+import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -8,5 +9,5 @@ import lombok.RequiredArgsConstructor;
 public class TimeWindowsRequestDTO {
     private String date;
 
-    private Integer stationId;
+    private List<Integer> stationIdsList;
 }

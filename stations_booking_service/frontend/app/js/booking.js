@@ -1,18 +1,20 @@
-let cell = '.booking';
 let currentId;
 let posId;
 let nextId;
-let windows = [];
 let resp;
-let schedule = {};
-let availWin = {};
-let indexWindows = [];
-let subWIn = {}
-let id = $('.booking__station input[type=number]');
 
+let scheduleMap = {};
+let windowsList = [];
+let availWinMap = {};
+let indexWindowsList = [];
+let subWinMap = {}
+
+let cell = '.booking';
+let id = $('.booking__station input[type=number]');
 let input = $('.booking');
+
 input.change(function() {
-    $(indexWindows).each(function(index, value) {
+    $(indexWindowsList).each(function(index, value) {
         if (input.eq(index).is(':checked')) {
             $(cell+value.toString()).css({
                 'opacity': '1',
@@ -29,29 +31,32 @@ input.change(function() {
 
 $('.booking__station-back').click(function(){
     currentId = id.val();
-    posId = $.inArray(currentId, ids);
-    if (posId === 0){
-        nextId = $(ids).get(-1);
+    posId = $.inArray(parseInt(currentId), stationIdsList);
+    if (posId === 0) {
+        if (stationIdsList.length !== 1) {
+        nextId = $(stationIdsList).get(-1);
         id.val(nextId);
         extend();
+        }
     }
-    else{
-        id.val($(ids).get(posId-1));
+    else {
+        id.val($(stationIdsList).get(posId-1));
         extend();
     }
+
     slideWindows();
 });
 
 $('.booking__station-forward').click(function(){
     currentId = id.val();
-    posId = $.inArray(currentId, ids);
-    if (posId === $(ids).length-1){
-        nextId = $(ids).get(0);
+    posId = $.inArray(currentId, stationIdsList);
+    if (posId === $(stationIdsList).length-1){
+        nextId = $(stationIdsList).get(0);
         id.val(nextId);
         extend();
     }
     else{
-        id.val($(ids).get(posId+1));
+        id.val($(stationIdsList).get(posId+1));
         extend();
     }
     slideWindows();
@@ -88,12 +93,31 @@ $('#window_send').click(function() {
     }
 });
 
+function getTimeWindows(){
+    let timeWindowsMapRequest =
+        {
+            "date": getDateString(getDateString($("#trip_date").val())),
+            stationIdsList: stationIdsList
+        }
+    $.ajax({
+        type:'POST',
+        url: 'http://localhost:8080/schedule/getTimeWindows',
+        dataType : 'json',
+        contentType: 'application/json',
+        data: JSON.stringify(timeWindowsMapRequest),
+        success: function(data){
+            $.each(data, function(key, value) {
+                scheduleMap[key] = value;
+            });
+        }
+    });
+}
+
 function displayBooking(){
     $('#loading').hide();
     $('#map').show();
     $('.ymaps-2-1-79-map').remove();
-    let idsi = ids;
-    initializeBooking(idsi);
+    initializeBooking(stationIdsList);
     $('#map').css({
         'margin-top': '5.5px',
         'height': '523px'
@@ -153,19 +177,19 @@ function setWindows(){
         let dCell = add20s(setMonth, setDay, setYear,
                             setHour, fixDate, step, resid);
         if (dCell !== '-') {
-            windows.push(dCell)
+            windowsList.push(dCell)
         }
     }
-    windows.sort();
+    windowsList.sort();
 }
 
-function drawWIndows(){
-    $.each(Object.keys(availWin), function(index1, value1){
+function drawWindows(){
+    $.each(Object.keys(availWinMap), function(index1, value1){
         let preIndex = value1
-        $.each(availWin[preIndex], function(index2, value2){
+        $.each(availWinMap[preIndex], function(index2, value2){
             let afterIndex = '_' + String(preIndex) +
                              '_' + String(index2);
-            indexWindows.push(afterIndex);
+            indexWindowsList.push(afterIndex);
             let id_name = 'window' + afterIndex;
 
             $('.booking__period').append('<input type="checkbox" id=' + '"' + id_name +
@@ -177,56 +201,26 @@ function drawWIndows(){
         })
     });
 }
-/*
-function getJsonIds(){
-    let url = './schedule.json'
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            resp = data;
-            let listIds = Object.keys(resp);
-            const flattenJSON = (obj = {}, res = {}, extraKey = '') => {
-                for(key in obj){
-                    if(typeof obj[key] !== 'object'){
-                        res[extraKey + key] = obj[key];
-                    }else{
-                        flattenJSON(obj[key], res, `${extraKey}${key}.`);
-                    }
-                }
-                return res;
-            };
-            let tempSchedule = flattenJSON(resp);
-            $.each(listIds, function(index, value){
-                schedule[value] = [];
-                for (key in tempSchedule){
-                    let flatId = key.split('.')[0]
-                    if (flatId  === value){
-                        schedule[value].push(tempSchedule[key])
-                    }
-                }
-            });
-        });
-}
-
- */
 
 function filterWindows(){
-    $.each(ids, function(index1, value1){
-        let chanWin = windows;
-        $.each(schedule[value1], function(index2, value2){
-            if ($.inArray(value2, windows) !== -1){
+    $.each(stationIdsList, function(index1, value1){
+        let chanWin = windowsList;
+
+        $.each(scheduleMap[value1], function(index2, value2){
+            if ($.inArray(value2, windowsList) !== -1){
                 chanWin = chanWin.filter(function(e){
                     return e!==value2;
                 });
             }
         });
-        availWin[value1] = chanWin;
+
+        availWinMap[value1] = chanWin;
     });
 }
 
 function slideWindows(){
     let cid = String(id.val());
-    $.each(indexWindows, function(index, value){
+    $.each(indexWindowsList, function(index, value){
         if (value.split('_')[1] === cid){
             $(cell+value).css({
                 'display': 'block'
@@ -240,11 +234,11 @@ function slideWindows(){
 }
 
 function endWindow(){
-    subWIn[login] = {};
-    $.each(ids, function(index, value){
-        subWIn[login][value] = []
+    subWinMap[login] = {};
+    $.each(stationIdsList, function(index, value){
+        subWinMap[login][value] = []
     });
-    $.each(indexWindows, function(index, value) {
+    $.each(indexWindowsList, function(index, value) {
         let checkId = input.eq(index).attr('id');
         if (input.eq(index).is(':checked')) {
             let checkVal =  $('#'+checkId).val();
@@ -252,7 +246,7 @@ function endWindow(){
             subWIn[login][checkInd].push(checkVal.slice(1));
         }
     });
-    $.each(ids, function(index, value){
+    $.each(stationIdsList, function(index, value){
         if (subWIn[login][value].length === 0) {
             delete subWIn[login][value];
         }
@@ -269,11 +263,10 @@ function endWindow(){
     })
 }
 
-//getJsonIds();
 function displayBookingPanel(){
     setWindows();
     filterWindows();
-    drawWIndows();
+    drawWindows();
     cell = '.booking__period-window';
     input = $('.booking__period input');
     slideWindows();

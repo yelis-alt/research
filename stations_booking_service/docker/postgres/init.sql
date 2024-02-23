@@ -51,8 +51,8 @@ INSERT INTO electrocar.station VALUES(36, 'г. Санкт-Петербург, М
 INSERT INTO electrocar.station VALUES(37, 'г. Санкт-Петербург, набережная Обводного канала, 72', 59.912240, 30.333175, 0, 'Ленэнерго', 'TYPE_2', 43, 'AC', TRUE);
 INSERT INTO electrocar.station VALUES(38, 'г. Санкт-Петербург, набережная Обводного канала, 72', 59.912240, 30.333175, 0, 'Ленэнерго', 'CHADEMO', 50, 'DC', TRUE);
 INSERT INTO electrocar.station VALUES(39, 'г. Санкт-Петербург, набережная Обводного канала, 72', 59.912240, 30.333175, 0, 'Ленэнерго', 'CCSCOMBO_2', 50, 'DC', TRUE);
-INSERT INTO electrocar.station VALUES(40, 'г.Санкт-Петербург, набережная Обводного канала, 24', 59.913497, 30.375328, 24, 'Ленэнерго', 'TYPE_2', 22, 'AC', TRUE);
-INSERT INTO electrocar.station VALUES(41, 'г.Санкт-Петербург, набережная Обводного канала, 24', 59.913497, 30.375328, 24, 'Ленэнерго', 'TYPE_2', 22, 'AC', TRUE);
+INSERT INTO electrocar.station VALUES(40, 'г. Санкт-Петербург, набережная Обводного канала, 24', 59.913497, 30.375328, 24, 'Ленэнерго', 'TYPE_2', 22, 'AC', TRUE);
+INSERT INTO electrocar.station VALUES(41, 'г. Санкт-Петербург, набережная Обводного канала, 24', 59.913497, 30.375328, 24, 'Ленэнерго', 'TYPE_2', 22, 'AC', TRUE);
 INSERT INTO electrocar.station VALUES(42, 'г. Санкт-Петербрг, ул. Ольминского, 12А', 59.898250, 30.423262, NULL, NULL, NULL, NULL, NULL, FALSE);
 INSERT INTO electrocar.station VALUES(43, 'г. Санкт-Петербург, Лиговский проспект, 30', 59.926845, 30.362140, 38, 'Ленэнерго', 'TYPE_2', 43, 'AC', TRUE);
 INSERT INTO electrocar.station VALUES(44, 'г. Санкт-Петербург, Лиговский проспект, 30', 59.926845, 30.362140, 38, 'Ленэнерго', 'CHADEMO', 50, 'DC', TRUE);
@@ -285,6 +285,9 @@ INSERT INTO electrocar.station VALUES(269, 'г. Чита, ул. Маршала �
 CREATE TABLE IF NOT EXISTS electrocar.schedule(
     id BIGSERIAL PRIMARY KEY,
     code CHAR(8) NOT NULL,
+    id_station INT NOT NULL
+        CONSTRAINT id_station_fk
+        REFERENCES electrocar.station(id),
     datetime_from TIMESTAMP NOT NULL,
     datetime_to TIMESTAMP NOT NULL
 );

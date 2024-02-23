@@ -3,9 +3,10 @@ package electrocar.service.schedule;
 import electrocar.dto.schedule.TimeWindowsRequestDTO;
 import electrocar.dto.schedule.TimeWindowsSaveRequestDTO;
 import java.util.List;
+import java.util.Map;
 
 public interface ScheduleService {
-    List<String> getTimeWindows(TimeWindowsRequestDTO timeWindowsRequest);
+    Map<String, List<String>> getTimeWindowsMap(TimeWindowsRequestDTO timeWindowsRequest);
 
     void saveTimeWindows(TimeWindowsSaveRequestDTO timeWindowsSaveRequest);
 }

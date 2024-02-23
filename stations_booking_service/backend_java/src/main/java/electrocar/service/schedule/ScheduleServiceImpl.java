@@ -6,8 +6,7 @@ import electrocar.dto.schedule.TimeWindowsRequestDTO;
 import electrocar.dto.schedule.TimeWindowsSaveRequestDTO;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +19,21 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final ScheduleDao scheduleDao;
 
     @Override
-    public List<String> getTimeWindows(TimeWindowsRequestDTO timeWindowsRequest) {
-        List<Schedule> schedulesList = scheduleDao.getTimeWindowsByDateAndStationId(
-                timeWindowsRequest.getDate(), timeWindowsRequest.getStationId());
+    public Map<String, List<String>> getTimeWindowsMap(TimeWindowsRequestDTO timeWindowsRequest) {
+        List<Schedule> schedulesList = scheduleDao.getTimeWindowsByDateAndStationIdsList(
+                timeWindowsRequest.getDate(), timeWindowsRequest.getStationIdsList());
 
-        return schedulesList.stream().map(this::getTimeWindowString).toList();
+        Map<String, List<String>> timeWindowMap = new HashMap<>();
+        for (Schedule schedule : schedulesList) {
+            String stationIdString = schedule.getIdStation().toString();
+
+            if (!timeWindowMap.containsKey(stationIdString)) {
+                timeWindowMap.put(stationIdString, new ArrayList<>());
+            }
+            timeWindowMap.get(stationIdString).add(getTimeWindowString(schedule));
+        }
+
+        return timeWindowMap;
     }
 
     @Override
