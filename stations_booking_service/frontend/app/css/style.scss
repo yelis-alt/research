@@ -666,7 +666,7 @@ input[type="range"] {
 #map, #mapi{
   padding: 0;
   margin: 17.5px 0  0 42px;
-  width: 1452px;
+  width: 1453px;
   height: 450px;
   display: flex;
   border: solid $color;
@@ -793,10 +793,23 @@ input.ymaps-2-1-79-searchbox-input__input{
       @extend %booking_font;
     }
   }
+  &__reach, &__charge, &__fullreach{
+    @extend %booking_font;
+    font-size: 1rem;
+    background-color: white;
+    border-bottom: 1px solid black;
+  }
+  &__fullreach{
+    position: absolute;
+    border-bottom: 2px solid $color;
+    border-left: 3px solid $color;
+    margin-left: -3px;
+    display: inline-block;
+  }
   &__period{
     @extend %booking_panel;
     overflow-y: scroll;
-    height: 432px;
+    height: 370px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;

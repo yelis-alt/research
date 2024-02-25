@@ -1,25 +1,31 @@
 let currentId;
 let posId;
 let nextId;
+let scheduleList;
 
-let scheduleMap = {};
 let windowsList = [];
-let availWinMap = {};
+let availWindowsList = [];
 let indexWindowsList = [];
 
-let cell = '.booking';
+let reachTimeDesc = "•  Время прибытия:";
+let chargeTimeDesc = "•  Продолжительность зарядки:";
+let windowPrefix = "#window"
+let bookingPeriod = ".booking__period-"
+let cellSlide = '.booking__period-window';
 let id = $('.booking__station input[type=number]');
 let input = $('.booking');
 
 input.change(function() {
     $(indexWindowsList).each(function(index, value) {
-        if (input.eq(index).is(':checked')) {
-            $(cell+value.toString()).css({
+        let windowId = windowPrefix + value;
+        let windowClass = bookingPeriod + windowId.slice(1);
+        if ($(windowId).is(':checked')) {
+            $(windowClass).css({
                 'opacity': '1',
                 'border': 'solid rgba(0, 0, 0, 1) 2px',
             });
-        }else{
-            $(cell+value.toString()).css({
+        } else {
+            $(windowClass).css({
                 'opacity': '0.6',
                 'border': 'solid rgba(0, 0, 0, 0.6) 2px',
             });
@@ -28,7 +34,7 @@ input.change(function() {
 });
 
 $('.booking__station-back').click(function(){
-    currentId = id.val();
+    currentId = parseInt(id.val());
     posId = $.inArray(parseInt(currentId), stationIdsList);
     if (posId === 0) {
         if (stationIdsList.length !== 1) {
@@ -41,19 +47,19 @@ $('.booking__station-back').click(function(){
         id.val($(stationIdsList).get(posId-1));
         extend();
     }
-
     slideWindows();
 });
 
 $('.booking__station-forward').click(function(){
-    currentId = id.val();
+    currentId = parseInt(id.val());
     posId = $.inArray(currentId, stationIdsList);
-    if (posId === $(stationIdsList).length-1){
-        nextId = $(stationIdsList).get(0);
-        id.val(nextId);
-        extend();
-    }
-    else{
+    if (posId === $(stationIdsList).length - 1) {
+        if (stationIdsList.length !== 1) {
+            nextId = $(stationIdsList).get(0);
+            id.val(nextId);
+            extend();
+        }
+    } else {
         id.val($(stationIdsList).get(posId+1));
         extend();
     }
@@ -74,23 +80,30 @@ $('#window_send').click(function() {
         let bookedWindowsMap = {};
         for (let i = 0; i < bookedWindowsList.length; i++) {
             let stationId = bookedWindowsList[i].id.split("_")[1];
-
             let keysList = Object.keys(bookedWindowsMap);
-            console.log(keysList)
-            console.log(bookedWindowsMap)
             if (keysList.indexOf(stationId) === -1) {
                 bookedWindowsMap[stationId] = [];
             }
-            bookedWindowsMap[stationId].push(bookedWindowsList[i].defaultValue.slice(1))
+
+            let timeWindowRaw = bookedWindowsList[i].defaultValue.slice(1);
+            let timeWindowSplit = timeWindowRaw.split(" ");
+            let dateStringSplit = timeWindowSplit[0].split(".");
+            let dateRef = dateStringSplit[2] + "-" + dateStringSplit[1] + "-" +
+                dateStringSplit[0];
+            let timeRef = timeWindowSplit[1];
+            let timeWindow = dateRef + " " + timeRef;
+
+            bookedWindowsMap[stationId].push(timeWindow);
         }
 
         let saveWindowsRequestsList = [];
-        $(bookedWindowsMap).each(function (index, map) {
+        let keysList = Object.keys(bookedWindowsMap);
+        $.each(keysList, function (index, key) {
             let saveWindowRequest =
                 {
-                    "stationId": parseInt(Object.keys(map)[0]),
+                    "stationId": parseInt(key),
                     "code": code,
-                    "timeWindowsList": Object.values(map)[0]
+                    "timeWindowsList": bookedWindowsMap[key]
                 }
 
                 saveWindowsRequestsList.push(saveWindowRequest);
@@ -104,7 +117,7 @@ $('#window_send').click(function() {
             contentType: 'application/json',
             success: function () {
                 alert('Ваш уникальный логин брони: ' + code);
-                location.reload(true);
+                //location.reload(true);
             },
             error: function () {
                 alert('К сожалению, не удалось зарегистрировать Вашу бронь');
@@ -126,9 +139,8 @@ function getTimeWindows(){
         contentType: 'application/json',
         data: JSON.stringify(timeWindowsMapRequest),
         success: function(response){
-            $.each(response, function(key, value) {
-                scheduleMap[key] = value;
-            });
+            scheduleList = response;
+            filterWindows();
         }
     });
 }
@@ -151,122 +163,165 @@ function displayBooking(){
     });
 }
 
-function trail_null(word){
-    if (word < 10){
-        word = '0' + word;
-    }
-    return word
-}
-function add20s(setMonth, setDay, setYear,
-                setHour, fixDate, step, resid) {
-    let nextDate = new Date(fixDate +
-        60000*(20*step  - resid));
-    let endDate = new Date(fixDate +
-        60000*(20*(step+1)  - resid));
-    let month = String(nextDate.getUTCMonth() + 1);
-    let day = String(nextDate.getUTCDate());
-    let year = String(nextDate.getUTCFullYear());
-    let cHour = String(nextDate.getHours());
-    let cMin = String(nextDate.getMinutes());
-    let eHour = String(endDate.getHours());
-    let eMin = String(endDate.getMinutes());
-    let fullDate = trail_null(day) + "." + trail_null(month) + "." +
-        trail_null(year);
-    let fullTime = trail_null(cHour)+ ":" + trail_null(cMin);
-    let endTime = trail_null(eHour)+ ":" + trail_null(eMin);
-    if ((Number(setDay) === Number(day)) &&
-        (Number(setMonth) === Number(month)) &&
-        (Number(setYear) === Number(year)) &&
-        (Number(setHour) > Number(cHour))){
-        return '-'
-    }else{
-        return fullDate + ' ' + fullTime + '-' + endTime
-    }
-}
-
 function setWindows(){
-    let minut = new Date(Date.now());
-    let resid = minut.getMinutes() % 20;
-    let fixDate = Date.now();
-    let compDate = new Date(Date.now());
-    let setMonth = String(compDate.getUTCMonth() + 1);
-    let setDay = String(compDate.getUTCDate());
-    let setYear = String(compDate.getUTCFullYear());
-    let setHour = String(compDate.getHours());
-    for (let step = 0; step<=((24*60)/20*14); step++) {
-        let dCell = add20s(setMonth, setDay, setYear,
-                            setHour, fixDate, step, resid);
-        if (dCell !== '-') {
-            windowsList.push(dCell)
+    let dateSplit = $("#trip_date").val().split("-");
+    let chosenDate = new Date();
+    chosenDate.setDate(dateSplit[2]);
+    chosenDate.setMonth(parseInt(dateSplit[1]) - 1);
+    chosenDate.setFullYear(dateSplit[0]);
+
+    if (new Date().getTime() === chosenDate.getTime()) {
+        let minutes = chosenDate.getMinutes();
+        if (minutes <= 20) {
+            chosenDate.setMinutes(20);
+        } else {
+            if (minutes <= 40) {
+                chosenDate.setMinutes(40);
+            } else {
+                chosenDate.setHours(chosenDate.getHours() + 1);
+                chosenDate.setMinutes(0);
+            }
         }
+        chosenDate.setSeconds(0);
+    } else {
+        chosenDate.setHours(0);
+        chosenDate.setMinutes(0);
+        chosenDate.setSeconds(0);
     }
-    windowsList.sort();
-}
 
-function drawWindows(){
-    $.each(Object.keys(availWinMap), function(index1, value1){
-        let preIndex = value1
-        $.each(availWinMap[preIndex], function(index2, value2){
-            let afterIndex = '_' + String(preIndex) +
-                             '_' + String(index2);
-            indexWindowsList.push(afterIndex);
-            let id_name = 'window' + afterIndex;
+    let dateStringSplit = getDateString(chosenDate).split("-");
+    let dateString = dateStringSplit[2] + "." +
+        dateStringSplit[1] + "." + dateStringSplit[0];
+    let chosenDay = chosenDate.getDate();
 
-            $('.booking__period').append('<input type="checkbox" id=' + '"' + id_name +
-                '" ' +'value=' + '" ' + value2 + '"'+ '/>');
-            $('.booking__period').append('<label class="booking__period-'+
-                id_name + '"' + ' for=' + '"'
-                + id_name + '"> ' + '&nbsp;' + value2.split(' ')[0] +
-                '<br>' + value2.split(' ')[1] + '</label>');
-        })
-    });
+    while (chosenDate.getHours() !== 0 || chosenDate.getDate() === chosenDay) {
+        let windowString = dateString + " ";
+        windowString = formHourMinuteFormat(windowString, chosenDate);
+        windowString += "-";
+        chosenDate.setMinutes(chosenDate.getMinutes() + 20);
+
+        windowString = formHourMinuteFormat(windowString, chosenDate);
+        windowsList.push(windowString);
+    }
 }
 
 function filterWindows(){
-    $.each(stationIdsList, function(index1, value1){
-        let chanWin = windowsList;
+    $.each(scheduleList, function (index, schedule) {
+        let bookedTimeWindowsList = [];
+        let key = schedule.stationId.toString();
+       $.each(schedule.timeWindowsList, function (index, timeWindow){
+           bookedTimeWindowsList.push(timeWindow);
+       });
 
-        $.each(scheduleMap[value1], function(index2, value2){
-            if ($.inArray(value2, windowsList) !== -1){
-                chanWin = chanWin.filter(function(e){
-                    return e!==value2;
-                });
-            }
-        });
+       let availWindowsListForId = [];
+       if (bookedTimeWindowsList.length === 0) {
+           availWindowsListForId = windowsList;
+       } else {
+           $.each(windowsList, function (index, timeWindow) {
+               if (bookedTimeWindowsList.indexOf(timeWindow) === -1) {
+                   availWindowsListForId.push(timeWindow);
+               }
+           });
+       }
 
-        availWinMap[value1] = chanWin;
+       availWindowsListForId = availWindowsListForId.sort();
+       let availWindows =
+           {
+               "stationId": key,
+               "timeWindowsList": availWindowsListForId
+           }
+       availWindowsList.push(availWindows);
     });
+
+    drawWindows();
+}
+
+function drawWindows() {
+    $.each(availWindowsList, function (index, obj) {
+        $.each(obj.timeWindowsList, function (index2, timeWindow) {
+            let afterIndex = '_' + String(obj.stationId.toString()) +
+                '_' + String(index2);
+            indexWindowsList.push(afterIndex);
+            let idName = 'window' + afterIndex;
+
+            $('.booking__period').append('<input type="checkbox" id=' + '"' + idName +
+                '" ' + 'value=' + '" ' + timeWindow + '"' + '/>');
+            $('.booking__period').append('<label class="booking__period-' +
+                idName + '"' + ' for=' + '"'
+                + idName + '"> ' + '&nbsp;' + timeWindow.split(' ')[0] +
+                '<br>' + timeWindow.split(' ')[1] + '</label>');
+
+        });
+    });
+
+    slideWindows();
+    loadFullReachTime();
 }
 
 function slideWindows(){
-    let cid = String(id.val());
+    let currentId = id.val().toString();
     $.each(indexWindowsList, function(index, value){
-        if (value.split('_')[1] === cid){
-            $(cell+value).css({
+        if (value.split('_')[1] === currentId){
+            $(cellSlide + value).css({
                 'display': 'block'
             });
         }else{
-            $(cell+value).css({
+            $(cellSlide + value).css({
                 'display': 'none'
             })
         }
     });
+
+    $.each(routeResponse, function (index, node) {
+        if (node.routeNode.id === parseInt(currentId)) {
+            console.log("d")
+            let reachTimeIns = reachTimeDesc + getReachTime(node);
+            $(".booking__reach-desc").text(reachTimeIns);
+            let chargeTimeIns = chargeTimeDesc + getChargeTime(node);
+            $(".booking__charge-desc").text(chargeTimeIns);
+
+            return false;
+        }
+    });
+}
+
+function loadFullReachTime() {
+    let routeNodeLast = routeResponse[routeResponse.length-1];
+    let fullreachTime = getReachTime(routeNodeLast);
+
+    $(".booking__fullreach-desc").append(fullreachTime);
+}
+
+function getReachTime(routeNode) {
+    let time = " ";
+    time += routeNode.reachDuration.hours.toString();
+    time += "ч. "
+    time += routeNode.reachDuration.minutes.toString();
+    time += "м."
+
+    return time;
+}
+
+function getChargeTime(routeNode) {
+    let time = " ";
+    time += routeNode.chargeDuration.hours.toString();
+    time += "ч. "
+    time += routeNode.chargeDuration.minutes.toString();
+    time += "м."
+
+    return time;
 }
 
 function displayBookingPanel(){
     setWindows();
-    filterWindows();
-    drawWindows();
-    cell = '.booking__period-window';
-    input = $('.booking__period input');
-    slideWindows();
+    getTimeWindows();
 }
 
 function extend(){
     let digits = id.val().toString().length;
-    let wid =  Number(digits)*10;
+    let width =  Number(digits)*10;
     id.css({
-        'width': wid
+        'width': width
     });
 }
 
@@ -276,4 +331,20 @@ function getCode() {
     let randomNumbers  = Math.round(Math.random()*10000).toString();
 
     return randomChars + randomNumbers;
+}
+
+function formHourMinuteFormat(windowString, chosenDate) {
+    windowString += addTrailingZero(chosenDate.getHours());
+    windowString += ":";
+    windowString += addTrailingZero(chosenDate.getMinutes());
+
+    return windowString;
+}
+
+function addTrailingZero(num) {
+    if (num < 10) {
+        return "0" + num.toString();
+    } else {
+        return num.toString();
+    }
 }

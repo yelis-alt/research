@@ -2,6 +2,7 @@ package electrocar.service.schedule;
 
 import electrocar.dao.ScheduleDao;
 import electrocar.dto.entity.Schedule;
+import electrocar.dto.schedule.TimeWindowsOutputDTO;
 import electrocar.dto.schedule.TimeWindowsRequestDTO;
 import electrocar.dto.schedule.TimeWindowsSaveRequestDTO;
 import java.text.SimpleDateFormat;
@@ -20,21 +21,43 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final ScheduleDao scheduleDao;
 
     @Override
-    public Map<String, List<String>> getTimeWindowsMap(TimeWindowsRequestDTO timeWindowsRequest) {
-        List<Schedule> schedulesList = scheduleDao.getTimeWindowsByDateAndStationIdsList(
-                timeWindowsRequest.getDate(), timeWindowsRequest.getStationIdsList());
+    public List<TimeWindowsOutputDTO> getTimeWindows(TimeWindowsRequestDTO timeWindowsRequest) {
+        List<Integer> stationIdsList = timeWindowsRequest.getStationIdsList();
+        List<Schedule> schedulesList =
+                scheduleDao.getTimeWindowsByDateAndStationIdsList(timeWindowsRequest.getDate(), stationIdsList);
 
-        Map<String, List<String>> timeWindowMap = new HashMap<>();
-        for (Schedule schedule : schedulesList) {
-            String stationIdString = schedule.getIdStation().toString();
-
-            if (!timeWindowMap.containsKey(stationIdString)) {
-                timeWindowMap.put(stationIdString, new ArrayList<>());
+        Map<Integer, List<String>> timeWindowMap = new HashMap<>();
+        if (schedulesList.isEmpty()) {
+            for (Integer stationId : stationIdsList) {
+                timeWindowMap.put(stationId, new ArrayList<>());
             }
-            timeWindowMap.get(stationIdString).add(getTimeWindowString(schedule));
+        } else {
+            for (Schedule schedule : schedulesList) {
+                int stationId = schedule.getIdStation();
+
+                if (!timeWindowMap.containsKey(stationId)) {
+                    timeWindowMap.put(stationId, new ArrayList<>());
+                }
+                timeWindowMap.get(stationId).add(getTimeWindowString(schedule));
+            }
+
+            for (Integer stationId : stationIdsList) {
+                if (!timeWindowMap.containsKey(stationId)) {
+                    timeWindowMap.put(stationId, new ArrayList<>());
+                }
+            }
         }
 
-        return timeWindowMap;
+        List<TimeWindowsOutputDTO> timeWindowsOutpusList = new ArrayList<>();
+        for (Map.Entry<Integer, List<String>> entry : timeWindowMap.entrySet()) {
+            TimeWindowsOutputDTO timeWindowsOutput = new TimeWindowsOutputDTO();
+            timeWindowsOutput.setStationId(entry.getKey());
+            timeWindowsOutput.setTimeWindowsList(entry.getValue());
+
+            timeWindowsOutpusList.add(timeWindowsOutput);
+        }
+
+        return timeWindowsOutpusList;
     }
 
     @Override

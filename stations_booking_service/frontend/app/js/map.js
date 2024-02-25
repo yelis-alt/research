@@ -212,7 +212,6 @@ function displayMap(){
 }
 
 function initializeBooking(stationIdsList) {
-    getTimeWindows();
     startCoordsBooking = [startCoords["longitude"], startCoords["latitude"]]
     finishCoordsBooking = [finishCoords["longitude"], finishCoords["latitude"]]
     let myMap = new ymaps.Map("map", {

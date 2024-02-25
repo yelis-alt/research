@@ -641,7 +641,8 @@ public class RoutingServiceImpl implements RoutingService {
                             .toList()
                             .get(0);
                     double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
-                    distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
+                    distanceCumm += roundToTwoDecimals(
+                            edgeMap.values().iterator().next().get(DISTANCE));
                     costCumm += roundToTwoDecimals(
                             edgeMap.values().iterator().next().get(COST));
                     reachDurationCumm += edgeMap.values().iterator().next().get(TRIP_DURATION);

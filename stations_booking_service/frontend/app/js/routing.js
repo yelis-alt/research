@@ -1,3 +1,4 @@
+let routeResponse;
 $('#ok').click(function(){
     preventSend();
     if (($('.ymaps-2-1-79-route-panel-input__input').eq(0).val() != '') &
@@ -147,9 +148,35 @@ function getRoute(){
                         "hours": 1,
                         "minutes": 13
                     },
+
                     "reachDuration": {
                         "hours": 0,
                         "minutes": 14
+                    }
+                },
+                {
+                    "routeNode": {
+                        "id": 65,
+                        "address": "г. Санкт-Петербург, ул. Костюшко, 1к1",
+                        "longitude": 59.947551,
+                        "latitude": 30.397171,
+                        "price": 28,
+                        "company": "Ленэнерго",
+                        "plug": "TYPE_2",
+                        "power": 43,
+                        "plugType": "AC",
+                        "status": true
+                    },
+                    "distance": 6.49,
+                    "cost": 762.12,
+                    "chargeDuration": {
+                        "hours": 1,
+                        "minutes": 18
+                    },
+
+                    "reachDuration": {
+                        "hours": 0,
+                        "minutes": 18
                     }
                 },
                 {
@@ -177,12 +204,13 @@ function getRoute(){
                     }
                 }
             ]
+            routeResponse = response;
             if (response.length === 0){
                 alert('К сожалению, согласно заданными Вами параметрами ' +
                     'построение маршрута невозможно.\n' +
                     'Вы можете поменять их и попробовать снова.');
                 window.location.reload();
-            }else{
+            } else {
                 stationNodesList = response.slice(1, -1);
                 if (stationNodesList.length !== 0) {
                     $(stationNodesList).each(function (ind) {
