@@ -4,7 +4,6 @@ let startCoords;
 let finishCoords;
 let startCoordsBooking;
 let finishCoordsBooking;
-let login;
 let stationsList;
 
 let imgPos = '/images/c.png';
@@ -160,8 +159,8 @@ function getStationsList() {
         data: JSON.stringify(stationsListRequest),
         dataType: 'json',
         contentType: "application/json",
-        success: function (data) {
-            stationsList = data
+        success: function (response) {
+            stationsList = response
             ymaps.ready(function () {
                 MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
                     '<div>$[properties.iconContent]</div>'

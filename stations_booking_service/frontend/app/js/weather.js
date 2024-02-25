@@ -179,8 +179,8 @@ function getTemperature(longitude, latitude, dateRef) {
         data: JSON.stringify(weatherRequest),
         dataType : "json",
         contentType: "application/json",
-        success: function(data) {
-            $(".weather__temp-number").val(data[0]);
+        success: function(response) {
+            $(".weather__temp-number").val(response[0]);
 
             let size  = $(".weather__temp-number").val().length;
             if (size === 1) {

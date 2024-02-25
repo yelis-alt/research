@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/schedule")
 public class ScheduleController {
+    private static final String STATUS = "status";
+
     private final ScheduleService scheduleService;
 
     @PostMapping(value = "/getTimeWindows")
@@ -24,8 +27,11 @@ public class ScheduleController {
     }
 
     @PostMapping(value = "/saveTimeWindows")
-    public void saveTimeWindows(@Valid @RequestBody TimeWindowsSaveRequestDTO timeWindowsSaveRequest) {
+    public Map<String, HttpStatus> saveTimeWindows(
+            @Valid @RequestBody List<TimeWindowsSaveRequestDTO> timeWindowsSaveRequestsList) {
 
-        scheduleService.saveTimeWindows(timeWindowsSaveRequest);
+        scheduleService.saveTimeWindows(timeWindowsSaveRequestsList);
+
+        return Map.of(STATUS, HttpStatus.OK);
     }
 }

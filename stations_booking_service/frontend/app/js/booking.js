@@ -1,13 +1,11 @@
 let currentId;
 let posId;
 let nextId;
-let resp;
 
 let scheduleMap = {};
 let windowsList = [];
 let availWinMap = {};
 let indexWindowsList = [];
-let subWinMap = {}
 
 let cell = '.booking';
 let id = $('.booking__station input[type=number]');
@@ -68,28 +66,50 @@ $('#register').on('submit', function (event) {
 });
 
 $('#window_send').click(function() {
-    if ($('.booking__period input:checked').length === 0) {
+    let bookedWindowsList = $('.booking__period input:checked');
+    let code = getCode();
+    if (bookedWindowsList.length === 0) {
         alert('Выберите хотя бы одно окно брони');
     } else {
-        endWindow();
+        let bookedWindowsMap = {};
+        for (let i = 0; i < bookedWindowsList.length; i++) {
+            let stationId = bookedWindowsList[i].id.split("_")[1];
+
+            let keysList = Object.keys(bookedWindowsMap);
+            console.log(keysList)
+            console.log(bookedWindowsMap)
+            if (keysList.indexOf(stationId) === -1) {
+                bookedWindowsMap[stationId] = [];
+            }
+            bookedWindowsMap[stationId].push(bookedWindowsList[i].defaultValue.slice(1))
+        }
+
+        let saveWindowsRequestsList = [];
+        $(bookedWindowsMap).each(function (index, map) {
+            let saveWindowRequest =
+                {
+                    "stationId": parseInt(Object.keys(map)[0]),
+                    "code": code,
+                    "timeWindowsList": Object.values(map)[0]
+                }
+
+                saveWindowsRequestsList.push(saveWindowRequest);
+        });
+
         $.ajax({
             type: 'POST',
-            url: 'schedule',
-            data: JSON.stringify({resp: resp}),
-            dataType : 'json',
+            url: 'http://localhost:8080/schedule/saveTimeWindows',
+            data: JSON.stringify(saveWindowsRequestsList),
+            dataType: 'json',
             contentType: 'application/json',
-            error: function () {
-                setTimeout(function(){
-                    alert('К сожалению, не удалось зарегистрировать Вашу бронь');
-                }, 1000);
-            },
             success: function () {
-                setTimeout(function(){
-                    $('#register').unbind('submit').submit();
-                    alert('Ваш уникальный логин брони: ' + login);
-                }, 1000);
+                alert('Ваш уникальный логин брони: ' + code);
+                location.reload(true);
+            },
+            error: function () {
+                alert('К сожалению, не удалось зарегистрировать Вашу бронь');
             }
-        })
+        });
     }
 });
 
@@ -105,8 +125,8 @@ function getTimeWindows(){
         dataType : 'json',
         contentType: 'application/json',
         data: JSON.stringify(timeWindowsMapRequest),
-        success: function(data){
-            $.each(data, function(key, value) {
+        success: function(response){
+            $.each(response, function(key, value) {
                 scheduleMap[key] = value;
             });
         }
@@ -233,36 +253,6 @@ function slideWindows(){
     });
 }
 
-function endWindow(){
-    subWinMap[login] = {};
-    $.each(stationIdsList, function(index, value){
-        subWinMap[login][value] = []
-    });
-    $.each(indexWindowsList, function(index, value) {
-        let checkId = input.eq(index).attr('id');
-        if (input.eq(index).is(':checked')) {
-            let checkVal =  $('#'+checkId).val();
-            let checkInd = checkId.split('_')[1];
-            subWIn[login][checkInd].push(checkVal.slice(1));
-        }
-    });
-    $.each(stationIdsList, function(index, value){
-        if (subWIn[login][value].length === 0) {
-            delete subWIn[login][value];
-        }
-    })
-    let keyResp = Object.keys(resp);
-    let keySub = Object.keys(subWIn[login]);
-    $.each(keySub, function(index, value){
-        if ($.inArray(value, keyResp) !== -1){
-            resp[value][login] = subWIn[login][value];
-        }else{
-            resp[value] = {};
-            resp[value][login] = subWIn[login][value];
-        }
-    })
-}
-
 function displayBookingPanel(){
     setWindows();
     filterWindows();
@@ -278,4 +268,12 @@ function extend(){
     id.css({
         'width': wid
     });
+}
+
+function getCode() {
+    let randomLetters = _ => String.fromCharCode(0|Math.random()*26+97),
+        randomChars = Array(4).fill().map(randomLetters).join('');
+    let randomNumbers  = Math.round(Math.random()*10000).toString();
+
+    return randomChars + randomNumbers;
 }

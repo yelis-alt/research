@@ -9,6 +9,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,21 +38,24 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public void saveTimeWindows(TimeWindowsSaveRequestDTO timeWindowsSaveRequest) {
-        for (String timeWindow : timeWindowsSaveRequest.getTimeWindowsList()) {
-            String date = timeWindow.split(" ")[0].replace(".", "-");
-            String timePeriod = timeWindow.split(" ")[1];
-            String startTime = timePeriod.split("-")[0];
-            String finishTime = timePeriod.split("-")[1];
+    @Transactional
+    public void saveTimeWindows(List<TimeWindowsSaveRequestDTO> timeWindowsSaveRequestsList) {
+        for (TimeWindowsSaveRequestDTO timeWindowsSaveRequest : timeWindowsSaveRequestsList) {
+            for (String timeWindow : timeWindowsSaveRequest.getTimeWindowsList()) {
+                String date = timeWindow.split(" ")[0].replace(".", "-");
+                String timePeriod = timeWindow.split(" ")[1];
+                String startTime = timePeriod.split("-")[0];
+                String finishTime = timePeriod.split("-")[1];
 
-            String datetimeFromString = date + " " + startTime + SECONDS_PART;
-            String datetimeToString = date + " " + finishTime + SECONDS_PART;
+                String datetimeFromString = date + " " + startTime + SECONDS_PART;
+                String datetimeToString = date + " " + finishTime + SECONDS_PART;
 
-            scheduleDao.saveTimeWindows(
-                    timeWindowsSaveRequest.getCode(),
-                    timeWindowsSaveRequest.getStationId(),
-                    datetimeFromString,
-                    datetimeToString);
+                scheduleDao.saveTimeWindows(
+                        timeWindowsSaveRequest.getCode(),
+                        timeWindowsSaveRequest.getStationId(),
+                        datetimeFromString,
+                        datetimeToString);
+            }
         }
     }
 

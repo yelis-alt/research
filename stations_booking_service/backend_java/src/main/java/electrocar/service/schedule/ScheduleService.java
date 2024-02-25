@@ -8,5 +8,5 @@ import java.util.Map;
 public interface ScheduleService {
     Map<String, List<String>> getTimeWindowsMap(TimeWindowsRequestDTO timeWindowsRequest);
 
-    void saveTimeWindows(TimeWindowsSaveRequestDTO timeWindowsSaveRequest);
+    void saveTimeWindows(List<TimeWindowsSaveRequestDTO> timeWindowsSaveRequestsList);
 }

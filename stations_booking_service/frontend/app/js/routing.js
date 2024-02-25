@@ -102,8 +102,8 @@ function getRoute(){
         dataType : 'json',
         contentType: 'application/json',
         data: JSON.stringify(routeRequest),
-        success: function(data){
-            data = [
+        success: function(response){
+            response = [
                 {
                     "routeNode": {
                         "id": 0,
@@ -177,13 +177,13 @@ function getRoute(){
                     }
                 }
             ]
-            if (data.length === 0){
+            if (response.length === 0){
                 alert('К сожалению, согласно заданными Вами параметрами ' +
                     'построение маршрута невозможно.\n' +
                     'Вы можете поменять их и попробовать снова.');
                 window.location.reload();
             }else{
-                stationNodesList = data.slice(1, -1);
+                stationNodesList = response.slice(1, -1);
                 if (stationNodesList.length !== 0) {
                     $(stationNodesList).each(function (ind) {
                         stationIdsList.push(stationNodesList[ind].routeNode.id)
