@@ -1,3 +1,18 @@
+function contentHeight() {
+    var winH = $(window).outerHeight(),
+        headerHei = $("header").outerHeight(),
+        footerHei = $("footer").outerHeight(),
+        contentHei = winH - headerHei - footerHei;
+    $(".content-wrapper").css("min-height", contentHei);
+}
+
+$(document).ready(function() {
+    contentHeight();
+});
+$(window).resize(function() {
+    contentHeight();
+});
+
 ymaps.ready(init);
 
 let startCoords;

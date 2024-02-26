@@ -1,6 +1,6 @@
 function controlfromInput_kvt(fromSlider_kvt, fromInput_kvt, toInput_kvt, controlSlider) {
   const [from, to] = getParsed(fromInput_kvt, toInput_kvt);
-  fillSlider(fromInput_kvt, toInput_kvt, '#C6C6C6', '#000000', controlSlider);
+  fillSlider(fromInput_kvt, toInput_kvt, "#C6C6C6", "#000000", controlSlider);
   if (from > to) {
       fromSlider_kvt.value = to;
       fromInput_kvt.value = to;
@@ -11,7 +11,7 @@ function controlfromInput_kvt(fromSlider_kvt, fromInput_kvt, toInput_kvt, contro
   
 function controltoInput_kvt(toSlider_kvt, fromInput_kvt, toInput_kvt, controlSlider) {
   const [from, to] = getParsed(fromInput_kvt, toInput_kvt);
-  fillSlider(fromInput_kvt, toInput_kvt, '#C6C6C6', '#000000', controlSlider);
+  fillSlider(fromInput_kvt, toInput_kvt, "#C6C6C6", "#000000", controlSlider);
   setToggleAccessible(toInput_kvt);
   if (from <= to) {
       toSlider_kvt.value = to;
@@ -23,7 +23,7 @@ function controltoInput_kvt(toSlider_kvt, fromInput_kvt, toInput_kvt, controlSli
 
 function controlfromSlider_kvt(fromSlider_kvt, toSlider_kvt, fromInput_kvt) {
 const [from, to] = getParsed(fromSlider_kvt, toSlider_kvt);
-fillSlider(fromSlider_kvt, toSlider_kvt, '#C6C6C6', '#000000', toSlider_kvt);
+fillSlider(fromSlider_kvt, toSlider_kvt, "#C6C6C6", "#000000", toSlider_kvt);
 if (from > to) {
   fromSlider_kvt.value = to;
   fromInput_kvt.value = to;
@@ -40,7 +40,7 @@ return [from, to];
 
 function controltoSlider_kvt(fromSlider_kvt, toSlider_kvt, toInput_kvt) {
 const [from, to] = getParsed(fromSlider_kvt, toSlider_kvt);
-fillSlider(fromSlider_kvt, toSlider_kvt, '#C6C6C6', '#000000', toSlider_kvt);
+fillSlider(fromSlider_kvt, toSlider_kvt, "#C6C6C6", "#000000", toSlider_kvt);
 setToggleAccessible(toSlider_kvt);
 if (from <= to) {
   toSlider_kvt.value = to;
@@ -66,7 +66,7 @@ function fillSlider(from, to, sliderColor, rangeColor, controlSlider) {
 }
 
 function setToggleAccessible(currentTarget) {
-const toSlider_kvt = document.querySelector('#toSlider_kvt');
+const toSlider_kvt = document.querySelector("#toSlider_kvt");
 if (Number(currentTarget.value) <= 0 ) {
   toSlider_kvt.style.zIndex = 2;
 } else {
@@ -74,11 +74,11 @@ if (Number(currentTarget.value) <= 0 ) {
 }
 }
 
-const fromSlider_kvt = document.querySelector('#fromSlider_kvt');
-const toSlider_kvt = document.querySelector('#toSlider_kvt');
-const fromInput_kvt = document.querySelector('#fromInput_kvt');
-const toInput_kvt = document.querySelector('#toInput_kvt');
-fillSlider(fromSlider_kvt, toSlider_kvt, '#C6C6C6', '#000000', toSlider_kvt);
+const fromSlider_kvt = document.querySelector("#fromSlider_kvt");
+const toSlider_kvt = document.querySelector("#toSlider_kvt");
+const fromInput_kvt = document.querySelector("#fromInput_kvt");
+const toInput_kvt = document.querySelector("#toInput_kvt");
+fillSlider(fromSlider_kvt, toSlider_kvt, "#C6C6C6", "#000000", toSlider_kvt);
 setToggleAccessible(toSlider_kvt);
 
 fromSlider_kvt.oninput = () => controlfromSlider_kvt(fromSlider_kvt, toSlider_kvt, fromInput_kvt);
@@ -88,7 +88,7 @@ toInput_kvt.oninput = () => controltoInput_kvt(toSlider_kvt, fromInput_kvt, toIn
 
 function controlfromInput_price(fromSlider_price, fromInput_price, toInput_price, controlSlider) {
   const [from, to] = getParsed(fromInput_price, toInput_price);
-  fillSlider(fromInput_price, toInput_price, '#C6C6C6', '#000000', controlSlider);
+  fillSlider(fromInput_price, toInput_price, "#C6C6C6", "#000000", controlSlider);
   if (from > to) {
       fromSlider_price.value = to;
       fromInput_price.value = to;
@@ -99,7 +99,7 @@ function controlfromInput_price(fromSlider_price, fromInput_price, toInput_price
   
 function controltoInput_price(toSlider_price, fromInput_price, toInput_price, controlSlider) {
   const [from, to] = getParsed(fromInput_price, toInput_price);
-  fillSlider(fromInput_price, toInput_price, '#C6C6C6', '#000000', controlSlider);
+  fillSlider(fromInput_price, toInput_price, "#C6C6C6", "#000000", controlSlider);
   setToggleAccessible(toInput_price);
   if (from <= to) {
       toSlider_price.value = to;
@@ -111,7 +111,7 @@ function controltoInput_price(toSlider_price, fromInput_price, toInput_price, co
 
 function controlfromSlider_price(fromSlider_price, toSlider_price, fromInput_price) {
 const [from, to] = getParsed(fromSlider_price, toSlider_price);
-fillSlider(fromSlider_price, toSlider_price, '#C6C6C6', '#000000', toSlider_price);
+fillSlider(fromSlider_price, toSlider_price, "#C6C6C6", "#000000", toSlider_price);
 if (from > to) {
   fromSlider_price.value = to;
   fromInput_price.value = to;
@@ -122,7 +122,7 @@ if (from > to) {
 
 function controltoSlider_price(fromSlider_price, toSlider_price, toInput_price) {
 const [from, to] = getParsed(fromSlider_price, toSlider_price);
-fillSlider(fromSlider_price, toSlider_price, '#C6C6C6', '#000000', toSlider_price);
+fillSlider(fromSlider_price, toSlider_price, "#C6C6C6", "#000000", toSlider_price);
 setToggleAccessible(toSlider_price);
 if (from <= to) {
   toSlider_price.value = to;
@@ -154,7 +154,7 @@ function fillSlider(from, to, sliderColor, rangeColor, controlSlider) {
 }
 
 function setToggleAccessible(currentTarget) {
-const toSlider_price = document.querySelector('#toSlider_price');
+const toSlider_price = document.querySelector("#toSlider_price");
 if (Number(currentTarget.value) <= 0 ) {
   toSlider_price.style.zIndex = 2;
 } else {
@@ -162,11 +162,11 @@ if (Number(currentTarget.value) <= 0 ) {
 }
 }
 
-const fromSlider_price = document.querySelector('#fromSlider_price');
-const toSlider_price = document.querySelector('#toSlider_price');
-const fromInput_price = document.querySelector('#fromInput_price');
-const toInput_price = document.querySelector('#toInput_price');
-fillSlider(fromSlider_price, toSlider_price, '#C6C6C6', '#000000', toSlider_price);
+const fromSlider_price = document.querySelector("#fromSlider_price");
+const toSlider_price = document.querySelector("#toSlider_price");
+const fromInput_price = document.querySelector("#fromInput_price");
+const toInput_price = document.querySelector("#toInput_price");
+fillSlider(fromSlider_price, toSlider_price, "#C6C6C6", "#000000", toSlider_price);
 setToggleAccessible(toSlider_price);
 
 fromSlider_price.oninput = () => controlfromSlider_price(fromSlider_price, toSlider_price, fromInput_price);

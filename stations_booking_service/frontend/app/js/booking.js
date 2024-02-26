@@ -11,29 +11,29 @@ let reachTimeDesc = "•  Время прибытия:";
 let chargeTimeDesc = "•  Продолжительность зарядки:";
 let windowPrefix = "#window"
 let bookingPeriod = ".booking__period-"
-let cellSlide = '.booking__period-window';
-let id = $('.booking__station input[type=number]');
-let input = $('.booking');
+let cellSlide = ".booking__period-window";
+let id = $(".booking__station input[type=number]");
+let input = $(".booking");
 
 input.change(function() {
     $(indexWindowsList).each(function(index, value) {
         let windowId = windowPrefix + value;
         let windowClass = bookingPeriod + windowId.slice(1);
-        if ($(windowId).is(':checked')) {
+        if ($(windowId).is(":checked")) {
             $(windowClass).css({
-                'opacity': '1',
-                'border': 'solid rgba(0, 0, 0, 1) 2px',
+                "opacity": "1",
+                "border": "solid rgba(0, 0, 0, 1) 2px",
             });
         } else {
             $(windowClass).css({
-                'opacity': '0.6',
-                'border': 'solid rgba(0, 0, 0, 0.6) 2px',
+                "opacity": "0.6",
+                "border": "solid rgba(0, 0, 0, 0.6) 2px",
             });
         }
     });
 });
 
-$('.booking__station-back').click(function(){
+$(".booking__station-back").click(function(){
     currentId = parseInt(id.val());
     posId = $.inArray(parseInt(currentId), stationIdsList);
     if (posId === 0) {
@@ -50,7 +50,7 @@ $('.booking__station-back').click(function(){
     slideWindows();
 });
 
-$('.booking__station-forward').click(function(){
+$(".booking__station-forward").click(function(){
     currentId = parseInt(id.val());
     posId = $.inArray(currentId, stationIdsList);
     if (posId === $(stationIdsList).length - 1) {
@@ -67,15 +67,15 @@ $('.booking__station-forward').click(function(){
 });
 
 
-$('#register').on('submit', function (event) {
+$("#register").on("submit", function (event) {
     event.preventDefault();
 });
 
-$('#window_send').click(function() {
-    let bookedWindowsList = $('.booking__period input:checked');
+$("#window_send").click(function() {
+    let bookedWindowsList = $(".booking__period input:checked");
     let code = getCode();
     if (bookedWindowsList.length === 0) {
-        alert('Выберите хотя бы одно окно брони');
+        alert("Выберите хотя бы одно окно брони");
     } else {
         let bookedWindowsMap = {};
         for (let i = 0; i < bookedWindowsList.length; i++) {
@@ -110,17 +110,17 @@ $('#window_send').click(function() {
         });
 
         $.ajax({
-            type: 'POST',
-            url: 'http://localhost:8080/schedule/saveTimeWindows',
+            type: "POST",
+            url: "http://localhost:8080/schedule/saveTimeWindows",
             data: JSON.stringify(saveWindowsRequestsList),
-            dataType: 'json',
-            contentType: 'application/json',
+            dataType: "json",
+            contentType: "application/json",
             success: function () {
-                alert('Ваш уникальный логин брони: ' + code);
-                //location.reload(true);
+                alert("Ваш уникальный логин брони: " + code);
+                location.reload(true);
             },
             error: function () {
-                alert('К сожалению, не удалось зарегистрировать Вашу бронь');
+                alert("К сожалению, не удалось зарегистрировать Вашу бронь");
             }
         });
     }
@@ -133,10 +133,10 @@ function getTimeWindows(){
             stationIdsList: stationIdsList
         }
     $.ajax({
-        type:'POST',
-        url: 'http://localhost:8080/schedule/getTimeWindows',
-        dataType : 'json',
-        contentType: 'application/json',
+        type:"POST",
+        url: "http://localhost:8080/schedule/getTimeWindows",
+        dataType : "json",
+        contentType: "application/json",
         data: JSON.stringify(timeWindowsMapRequest),
         success: function(response){
             scheduleList = response;
@@ -146,20 +146,20 @@ function getTimeWindows(){
 }
 
 function displayBooking(){
-    $('#loading').hide();
-    $('#map').show();
-    $('.ymaps-2-1-79-map').remove();
+    $("#loading").hide();
+    $("#map").show();
+    $(".ymaps-2-1-79-map").remove();
     initializeBooking(stationIdsList);
-    $('#map').css({
-        'margin-top': '5.5px',
-        'height': '523px'
+    $("#map").css({
+        "margin-top": "5.5px",
+        "height": "523px"
     });
-    $('.ymaps-2-1-79-islets_icon-with-caption').css({
-        'display': 'none'
+    $(".ymaps-2-1-79-islets_icon-with-caption").css({
+        "display": "none"
     });
-    $('#booking').show();
-    $('.ymaps-2-1-79-map').css({
-        'height': '518px'
+    $("#booking").show();
+    $(".ymaps-2-1-79-map").css({
+        "height": "518px"
     });
 }
 
@@ -239,17 +239,17 @@ function filterWindows(){
 function drawWindows() {
     $.each(availWindowsList, function (index, obj) {
         $.each(obj.timeWindowsList, function (index2, timeWindow) {
-            let afterIndex = '_' + String(obj.stationId.toString()) +
-                '_' + String(index2);
+            let afterIndex = "_" + String(obj.stationId.toString()) +
+                "_" + String(index2);
             indexWindowsList.push(afterIndex);
-            let idName = 'window' + afterIndex;
+            let idName = "window" + afterIndex;
 
-            $('.booking__period').append('<input type="checkbox" id=' + '"' + idName +
+            $(".booking__period").append('<input type="checkbox" id=' + '"' + idName +
                 '" ' + 'value=' + '" ' + timeWindow + '"' + '/>');
-            $('.booking__period').append('<label class="booking__period-' +
+            $(".booking__period").append('<label class="booking__period-' +
                 idName + '"' + ' for=' + '"'
-                + idName + '"> ' + '&nbsp;' + timeWindow.split(' ')[0] +
-                '<br>' + timeWindow.split(' ')[1] + '</label>');
+                + idName + '"> ' + "&nbsp;" + timeWindow.split(" ")[0] +
+                "<br>" + timeWindow.split(" ")[1] + "</label>");
 
         });
     });
@@ -261,20 +261,19 @@ function drawWindows() {
 function slideWindows(){
     let currentId = id.val().toString();
     $.each(indexWindowsList, function(index, value){
-        if (value.split('_')[1] === currentId){
+        if (value.split("_")[1] === currentId){
             $(cellSlide + value).css({
-                'display': 'block'
+                "display": "block"
             });
         }else{
             $(cellSlide + value).css({
-                'display': 'none'
+                "display": "none"
             })
         }
     });
 
     $.each(routeResponse, function (index, node) {
         if (node.routeNode.id === parseInt(currentId)) {
-            console.log("d")
             let reachTimeIns = reachTimeDesc + getReachTime(node);
             $(".booking__reach-desc").text(reachTimeIns);
             let chargeTimeIns = chargeTimeDesc + getChargeTime(node);
@@ -321,13 +320,13 @@ function extend(){
     let digits = id.val().toString().length;
     let width =  Number(digits)*10;
     id.css({
-        'width': width
+        "width": width
     });
 }
 
 function getCode() {
     let randomLetters = _ => String.fromCharCode(0|Math.random()*26+97),
-        randomChars = Array(4).fill().map(randomLetters).join('');
+        randomChars = Array(4).fill().map(randomLetters).join("");
     let randomNumbers  = Math.round(Math.random()*10000).toString();
 
     return randomChars + randomNumbers;

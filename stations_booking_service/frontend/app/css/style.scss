@@ -800,11 +800,10 @@ input.ymaps-2-1-79-searchbox-input__input{
     border-bottom: 1px solid black;
   }
   &__fullreach{
-    position: absolute;
     border-bottom: 2px solid $color;
     border-left: 3px solid $color;
-    margin-left: -3px;
-    display: inline-block;
+    margin-left: -2.5px;
+    width: 258px;
   }
   &__period{
     @extend %booking_panel;

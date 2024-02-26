@@ -15,22 +15,22 @@ document.getElementById("defaultOpen").click();
 
 $("#defaultOpen").click(function(){
     $("#defaultOpen").css({
-        'border-bottom-color': '#005999',
-        'border-bottom-width': '3.5px',
-        'border-bottom-style': 'solid'
+        "border-bottom-color": "#005999",
+        "border-bottom-width": "3.5px",
+        "border-bottom-style": "solid"
     });
     $("#secondOpen").css({
-        'border-bottom-color': '#ffffff'
+        "border-bottom-color": "#ffffff"
     });
 });
 
 $("#secondOpen").click(function(){
     $("#secondOpen").css({
-        'border-bottom-color': '#005999',
-        'border-bottom-width': '3.5px',
-        'border-bottom-style': 'solid'
+        "border-bottom-color": "#005999",
+        "border-bottom-width": "3.5px",
+        "border-bottom-style": "solid"
     });
     $("#defaultOpen").css({
-        'border-bottom-color': '#ffffff'
+        "border-bottom-color": "#ffffff"
     });
 });
