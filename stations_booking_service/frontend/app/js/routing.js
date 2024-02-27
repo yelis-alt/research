@@ -126,6 +126,10 @@ function getRoute(){
                 extend();
                 displayMap();
             }
+        },
+        error: function () {
+            alert("К сожалению, не удалось построить Ваш маршрут");
+            window.location.reload();
         }
     });
 }
