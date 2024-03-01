@@ -155,7 +155,7 @@ function getStationsList() {
         }
     $.ajax({
         type: "POST",
-        url: "http://localhost:8080/routing/getFilteredStations",
+        url: HOST_JAVA + "routing/getFilteredStations",
         data: JSON.stringify(stationsListRequest),
         dataType: "json",
         contentType: "application/json",

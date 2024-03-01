@@ -30,7 +30,7 @@ services:
         hostname: python-application
         container_name: python-application
         ports:
-            - '8010:8000'
+            - '5000:5000'
     postgres:
         image: postgres:latest
         container_name: postgres

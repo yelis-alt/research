@@ -1,71 +1,56 @@
 package electrocar.service.weather;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import electrocar.dto.weather.WeatherRequestDTO;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
 import lombok.RequiredArgsConstructor;
-import org.apache.http.HttpEntity;
-import org.apache.http.ParseException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class WeatherServiceImpl implements WeatherService {
-    private static final String FORECASTS = "forecasts";
-    private static final String PARTS = "parts";
-    private static final String DAY = "day";
-    private static final String TEMP_AVG = "temp_avg";
+    private static final String HOURLY = "hourly";
+    private static final String TEMP = "temperature_2m";
+    private static final int hoursInDay = 24;
 
-    private final Gson gson;
+    private final RestTemplate restTemplate;
 
-    @Value("${yandexWeather.request.url}")
+    @Value("${openMeteo.request.url}")
     private String weatherRequestUrl;
 
-    @Value("${yandexWeather.request.api}")
-    private String api;
-
     @Override
-    public List<Double> getTemperature(WeatherRequestDTO weatherRequest) throws ParseException, IOException {
-        String lat = weatherRequest.getLocation().getLatitude().toString();
-        String lon = weatherRequest.getLocation().getLongitude().toString();
+    @SuppressWarnings("unchecked")
+    public List<Double> getTemperature(WeatherRequestDTO weatherRequest) {
+        String latitude = weatherRequest.getLocation().getLatitude().toString();
+        String longitude = weatherRequest.getLocation().getLongitude().toString();
 
         LocalDate dateChosen = LocalDate.parse(weatherRequest.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         long dayLimit = ChronoUnit.DAYS.between(LocalDate.now(), dateChosen) + 1;
 
-        String url = weatherRequestUrl + "?lat=" + lat + "&lon=" + lon + "&limit=" + dayLimit;
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.addHeader("X-Yandex-API-Key", api);
-        CloseableHttpClient client = HttpClients.createDefault();
-        CloseableHttpResponse response = client.execute(httpGet);
-        int statusCode = response.getStatusLine().getStatusCode();
+        Map<String, Object> forecastMap =
+                restTemplate.getForObject(weatherRequestUrl, Map.class, latitude, longitude, dayLimit);
 
-        if (statusCode == 200) {
-            HttpEntity httpEntity = response.getEntity();
-            String responseString = EntityUtils.toString(httpEntity, "UTF-8");
-            JsonObject responseJson = gson.fromJson(responseString, JsonObject.class);
-            Double tempAvg = responseJson
-                    .getAsJsonArray(FORECASTS)
-                    .get((int) dayLimit - 1)
-                    .getAsJsonObject()
-                    .get(PARTS)
-                    .getAsJsonObject()
-                    .get(DAY)
-                    .getAsJsonObject()
-                    .get(TEMP_AVG)
-                    .getAsDouble();
+        if (forecastMap != null && !forecastMap.isEmpty()) {
+            Map<String, Object> hourlyMap = (Map<String, Object>) forecastMap.get(HOURLY);
+            List<Double> tempsList = (List<Double>) hourlyMap.get(TEMP);
+            tempsList = tempsList.subList(tempsList.size() - hoursInDay, tempsList.size());
+            OptionalDouble avgTemp = tempsList.stream().mapToDouble(a -> a).average();
 
-            return List.of(tempAvg);
+            if (avgTemp.isPresent()) {
+                Double avgTempRounded = Double.parseDouble(String.valueOf(Math.round(avgTemp.getAsDouble())));
+
+                return List.of(avgTempRounded);
+            } else {
+
+                throw new InternalError("Unable to calculate daily average temperature for this location on "
+                        + weatherRequest.getDate().replace("-", "."));
+            }
         } else {
 
             throw new InternalError("Unable to determine temperature for this location on "

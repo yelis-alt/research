@@ -3,22 +3,24 @@ let posId;
 let nextId;
 let scheduleList;
 
+let HOST_JAVA = "http://localhost:8080/"
+let REACH_TIME_DESC = "•  Время прибытия:";
+let CHARGE_TIME_DESC = "•  Продолжительность зарядки:";
+let WINDOW_PREFIX = "#window"
+let BOOKING_PERIOD = ".booking__period-"
+let CELL_SLIDE = ".booking__period-window";
+
 let windowsList = [];
 let availWindowsList = [];
 let indexWindowsList = [];
 
-let reachTimeDesc = "•  Время прибытия:";
-let chargeTimeDesc = "•  Продолжительность зарядки:";
-let windowPrefix = "#window"
-let bookingPeriod = ".booking__period-"
-let cellSlide = ".booking__period-window";
 let id = $(".booking__station input[type=number]");
 let input = $(".booking");
 
 input.change(function() {
     $(indexWindowsList).each(function(index, value) {
-        let windowId = windowPrefix + value;
-        let windowClass = bookingPeriod + windowId.slice(1);
+        let windowId = WINDOW_PREFIX + value;
+        let windowClass = BOOKING_PERIOD + windowId.slice(1);
         if ($(windowId).is(":checked")) {
             $(windowClass).css({
                 "opacity": "1",
@@ -111,7 +113,7 @@ $("#window_send").click(function() {
 
         $.ajax({
             type: "POST",
-            url: "http://localhost:8080/schedule/saveTimeWindows",
+            url: HOST_JAVA + "schedule/saveTimeWindows",
             data: JSON.stringify(saveWindowsRequestsList),
             dataType: "json",
             contentType: "application/json",
@@ -134,7 +136,7 @@ function getTimeWindows(){
         }
     $.ajax({
         type:"POST",
-        url: "http://localhost:8080/schedule/getTimeWindows",
+        url: HOST_JAVA + "schedule/getTimeWindows",
         dataType : "json",
         contentType: "application/json",
         data: JSON.stringify(timeWindowsMapRequest),
@@ -262,11 +264,11 @@ function slideWindows(){
     let currentId = id.val().toString();
     $.each(indexWindowsList, function(index, value){
         if (value.split("_")[1] === currentId){
-            $(cellSlide + value).css({
+            $(CELL_SLIDE + value).css({
                 "display": "block"
             });
         }else{
-            $(cellSlide + value).css({
+            $(CELL_SLIDE + value).css({
                 "display": "none"
             })
         }
@@ -274,9 +276,9 @@ function slideWindows(){
 
     $.each(routeResponse, function (index, node) {
         if (node.routeNode.id === parseInt(currentId)) {
-            let reachTimeIns = reachTimeDesc + getReachTime(node);
+            let reachTimeIns = REACH_TIME_DESC + getReachTime(node);
             $(".booking__reach-desc").text(reachTimeIns);
-            let chargeTimeIns = chargeTimeDesc + getChargeTime(node);
+            let chargeTimeIns = CHARGE_TIME_DESC + getChargeTime(node);
             $(".booking__charge-desc").text(chargeTimeIns);
 
             return false;

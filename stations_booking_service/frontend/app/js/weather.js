@@ -175,7 +175,7 @@ function getTemperature(longitude, latitude, dateRef) {
         }
     $.ajax({
         method: "POST",
-        url: "http://localhost:8080/weather/getTemperature",
+        url: HOST_JAVA + "weather/getTemperature",
         data: JSON.stringify(weatherRequest),
         dataType : "json",
         contentType: "application/json",

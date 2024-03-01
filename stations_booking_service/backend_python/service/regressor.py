@@ -3,13 +3,12 @@ import pickle
 import pandas as pd
 
 
-def get_session_duration(energy, temperature):
-    poly_model = pickle.load(open("model/poly_model.pkl", "rb"))
-    regression_model = pickle.load(open("model/regression_model.pkl", "rb"))
+def get_session_duration(temp, accepted_energy):
+    scaler = pickle.load(open("model/scaler.pkl", "rb"))
+    model = pickle.load(open("model/ann.pkl", "rb"))
 
-    df = pd.DataFrame(data={"energy": energy,
-                            "temperature": temperature})
-    x = df[df.columns.to_list()].values
-    poly_x = poly_model.fit_transform(x)
+    x = pd.DataFrame(data={"temp": temp,
+                           "accepted_energy": accepted_energy})
+    x_scaled = scaler.transform(x)
 
-    return round(regression_model.predict(poly_x)[0], 3)
+    return round(float(model.predict(x_scaled)[0][0]), 3)

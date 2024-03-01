@@ -99,7 +99,7 @@ function getRoute(){
     });
     $.ajax({
         type:"POST",
-        url: "http://localhost:8080/routing/getRoute",
+        url: HOST_JAVA + "routing/getRoute",
         dataType : "json",
         contentType: "application/json",
         data: JSON.stringify(routeRequest),

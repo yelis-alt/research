@@ -41,7 +41,6 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String DECIMAL_POINT = "\\.";
     private static final double zeroDouble = 0.0;
     private static final int zeroInt = 0;
-    private static final double minEnergyDcCharge = 12.4;
     private static final double accOptCoef = 0.8;
     private static final double accChargeTether = 0.2;
     private static final int speed = 45;
@@ -60,6 +59,9 @@ public class RoutingServiceImpl implements RoutingService {
 
     @Value("${openRouteService.request.api}")
     private String api;
+
+    @Value("${python.service.host}")
+    private String pythonServiceHost;
 
     private HttpHeaders routeHeaders;
     private HttpHeaders fastApiHeaders;
@@ -236,20 +238,7 @@ public class RoutingServiceImpl implements RoutingService {
 
                             case DC: {
                                 double accDiff = accOpt - accFinish;
-                                if (accDiff >= minEnergyDcCharge) {
-                                    timeCharge += getTimeWaitFromRegressionModel(temp, accDiff);
-                                } else {
-                                    Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
-
-                                    log.error("Unable to build the route between nodes '"
-                                            + routePointMap.get(START_POINT)
-                                            + "' and '"
-                                            + routePointMap.get(FINISH_POINT)
-                                            + "' due to small amount of energy "
-                                            + "to be replenished by DC charging station");
-
-                                    return new HashMap<>();
-                                }
+                                timeCharge += getTimeWaitFromRegressionModel(temp, accDiff);
 
                                 break;
                             }
@@ -371,7 +360,7 @@ public class RoutingServiceImpl implements RoutingService {
         DcChargeDurationRequestDTO request = new DcChargeDurationRequestDTO(List.of(accDiff), List.of(temperature));
 
         ResponseEntity<DcChargeDurationOutputDTO> responseEntity = restTemplate.exchange(
-                "http://127.0.0.1:8000/routing/getDcChargeDuration",
+                pythonServiceHost + "routing/getDcChargeDuration",
                 HttpMethod.POST,
                 new HttpEntity<>(request, fastApiHeaders),
                 DcChargeDurationOutputDTO.class);
