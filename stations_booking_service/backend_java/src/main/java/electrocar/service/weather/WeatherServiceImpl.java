@@ -17,7 +17,7 @@ import org.springframework.web.client.RestTemplate;
 public class WeatherServiceImpl implements WeatherService {
     private static final String HOURLY = "hourly";
     private static final String TEMP = "temperature_2m";
-    private static final int hoursInDay = 24;
+    private static final int HOURS_IN_DAY = 24;
 
     private final RestTemplate restTemplate;
 
@@ -39,7 +39,7 @@ public class WeatherServiceImpl implements WeatherService {
         if (forecastMap != null && !forecastMap.isEmpty()) {
             Map<String, Object> hourlyMap = (Map<String, Object>) forecastMap.get(HOURLY);
             List<Double> tempsList = (List<Double>) hourlyMap.get(TEMP);
-            tempsList = tempsList.subList(tempsList.size() - hoursInDay, tempsList.size());
+            tempsList = tempsList.subList(tempsList.size() - HOURS_IN_DAY, tempsList.size());
             OptionalDouble avgTemp = tempsList.stream().mapToDouble(a -> a).average();
 
             if (avgTemp.isPresent()) {

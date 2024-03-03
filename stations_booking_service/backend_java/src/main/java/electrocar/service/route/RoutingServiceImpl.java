@@ -39,14 +39,12 @@ public class RoutingServiceImpl implements RoutingService {
     private static final String START_POINT = "startCoords point";
     private static final String FINISH_POINT = "finishCoords point";
     private static final String DECIMAL_POINT = "\\.";
-    private static final double zeroDouble = 0.0;
-    private static final int zeroInt = 0;
-    private static final double accOptCoef = 0.8;
-    private static final double accChargeTether = 0.2;
-    private static final int speed = 45;
-    private static final int price = 15;
-    private static final int genSuccessRep = 20;
-    private static final int genRep = 1000;
+    private static final double ACC_OPT_COEFFICIENT = 0.8;
+    private static final double ACC_CHARGE_TETHER = 0.2;
+    private static final int SPEED = 45;
+    private static final int PRICE = 15;
+    private static final int GEN_SUCCESS_REP = 20;
+    private static final int GEN_REP = 1000;
 
     private final OpenRouteServiceRequestDTO openRouteServiceRequest;
     private final RestTemplate restTemplate;
@@ -60,8 +58,8 @@ public class RoutingServiceImpl implements RoutingService {
     @Value("${openRouteService.request.api}")
     private String api;
 
-    @Value("${python.service.host}")
-    private String pythonServiceHost;
+    @Value("${python.service.origin}")
+    private String pythonServiceOrigin;
 
     private HttpHeaders routeHeaders;
     private HttpHeaders fastApiHeaders;
@@ -75,7 +73,7 @@ public class RoutingServiceImpl implements RoutingService {
     public List<RouteNodeDTO> getRoute(RouteRequestDTO routeRequest) {
         // define route parameters
         double accMax = routeRequest.getAccMax();
-        double accOpt = roundToTwoDecimals(accOptCoef * accMax);
+        double accOpt = roundToTwoDecimals(ACC_OPT_COEFFICIENT * accMax);
         double spendOpt = routeRequest.getSpendOpt();
         double temp = routeRequest.getTemperature();
         double accBegin = accMax * routeRequest.getAccLevel() / 100;
@@ -96,12 +94,7 @@ public class RoutingServiceImpl implements RoutingService {
                 getEdgeCostAndDuration(startPoint, finishPoint, spendOpt, accBegin, accMax, accOpt, temp, true);
         if (!directRouteMap.isEmpty()) {
             List<RouteNodeDTO> routeNodesList = new ArrayList<>();
-            routeNodesList.add(new RouteNodeDTO(
-                    startPoint,
-                    zeroDouble,
-                    zeroDouble,
-                    new DurationDTO(zeroInt, zeroInt),
-                    new DurationDTO(zeroInt, zeroInt)));
+            routeNodesList.add(new RouteNodeDTO(startPoint, 0.0, 0.0, new DurationDTO(0, 0), new DurationDTO(0, 0)));
 
             double reachDuration = directRouteMap.get(TRIP_DURATION);
             int hours = getHoursFromDuration(reachDuration);
@@ -110,7 +103,7 @@ public class RoutingServiceImpl implements RoutingService {
                     finishPoint,
                     directRouteMap.get(DISTANCE),
                     directRouteMap.get(COST),
-                    new DurationDTO(zeroInt, zeroInt),
+                    new DurationDTO(0, 0),
                     new DurationDTO(hours, minutes)));
 
             return routeNodesList;
@@ -212,10 +205,10 @@ public class RoutingServiceImpl implements RoutingService {
             if (accFinish >= 0) {
                 if (directRouteFlag) {
                     Map<String, Double> directRouteMap = new HashMap<>();
-                    directRouteMap.put(COST, roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)));
+                    directRouteMap.put(COST, roundToTwoDecimals(spendAct * PRICE * (dist + SPEED * timeDist)));
                     directRouteMap.put(DISTANCE, dist);
                     directRouteMap.put(TRIP_DURATION, timeDist);
-                    directRouteMap.put(CHARGE_DURATION, zeroDouble);
+                    directRouteMap.put(CHARGE_DURATION, 0.0);
 
                     return directRouteMap;
                 } else {
@@ -226,9 +219,9 @@ public class RoutingServiceImpl implements RoutingService {
                         double timeCharge = 0;
                         switch (nodeFinish.getPlugType()) {
                             case AC: {
-                                if (accFinish < accChargeTether * accMax) {
-                                    timeCharge += (accChargeTether * accMax - accFinish) / (0.5 * power);
-                                    timeCharge += (accOpt - accChargeTether * accMax) / power;
+                                if (accFinish < ACC_CHARGE_TETHER * accMax) {
+                                    timeCharge += (ACC_CHARGE_TETHER * accMax - accFinish) / (0.5 * power);
+                                    timeCharge += (accOpt - ACC_CHARGE_TETHER * accMax) / power;
                                 } else {
                                     timeCharge += (accOpt - accFinish) / power;
                                 }
@@ -244,9 +237,9 @@ public class RoutingServiceImpl implements RoutingService {
                             }
                         }
                         timeCharge = roundToTwoDecimals(timeCharge);
-                        double cost = roundToTwoDecimals(spendAct * price * (dist + speed * timeDist)
-                                + spendAct * price * speed * (timeWait + timeCharge)
-                                + price * (accOpt - accFinish));
+                        double cost = roundToTwoDecimals(spendAct * PRICE * (dist + SPEED * timeDist)
+                                + spendAct * PRICE * SPEED * (timeWait + timeCharge)
+                                + PRICE * (accOpt - accFinish));
 
                         Map<String, Double> edgeMap = new HashMap<>();
                         edgeMap.put(COST, cost);
@@ -278,8 +271,7 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
-    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish)
-            throws InterruptedException {
+    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish) throws InterruptedException {
         Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
         log.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));
         TimeUnit.SECONDS.sleep(2);
@@ -360,7 +352,7 @@ public class RoutingServiceImpl implements RoutingService {
         DcChargeDurationRequestDTO request = new DcChargeDurationRequestDTO(List.of(accDiff), List.of(temperature));
 
         ResponseEntity<DcChargeDurationOutputDTO> responseEntity = restTemplate.exchange(
-                pythonServiceHost + "routing/getDcChargeDuration",
+                pythonServiceOrigin + "routing/getDcChargeDuration",
                 HttpMethod.POST,
                 new HttpEntity<>(request, fastApiHeaders),
                 DcChargeDurationOutputDTO.class);
@@ -407,7 +399,7 @@ public class RoutingServiceImpl implements RoutingService {
         for (Map.Entry<Integer, List<Map<Integer, Map<String, Double>>>> entry : adjacencyMatrix.entrySet()) {
             int entryId = entry.getKey();
             if (entryId == 0) {
-                routeMap.put(entryId, zeroDouble);
+                routeMap.put(entryId, 0.0);
             } else {
                 routeMap.put(entryId, Double.MAX_VALUE);
             }
@@ -486,11 +478,11 @@ public class RoutingServiceImpl implements RoutingService {
         List<Integer> geneIdsList =
                 parent.getDnaMap().keySet().stream().sorted().toList();
 
-        while (success < genSuccessRep) {
+        while (success < GEN_SUCCESS_REP) {
             rep++;
-            log.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
+            log.info("Generation " + rep + "out of " + GEN_REP + "; Successful DNAs: " + success);
 
-            if (rep > genRep) {
+            if (rep > GEN_REP) {
                 if (success == 0) {
                     return new ArrayList<>();
                 }
@@ -569,7 +561,7 @@ public class RoutingServiceImpl implements RoutingService {
 
             parent = child;
         }
-        log.info("Generation " + rep + "out of " + genRep + "; Successful DNAs: " + success);
+        log.info("Generation " + rep + "out of " + GEN_REP + "; Successful DNAs: " + success);
 
         return getRouteNodesDromIdsList(adjacencyMatrix, bestPathIdsList, routeRequest);
     }
@@ -648,10 +640,10 @@ public class RoutingServiceImpl implements RoutingService {
                     routeNode.setChargeDuration(new DurationDTO(hoursCharge, minutesCharge));
                     routeNode.setReachDuration(new DurationDTO(hours, minutes));
                 } else {
-                    routeNode.setDistance(zeroDouble);
-                    routeNode.setCost(zeroDouble);
-                    routeNode.setChargeDuration(new DurationDTO(zeroInt, zeroInt));
-                    routeNode.setReachDuration(new DurationDTO(zeroInt, zeroInt));
+                    routeNode.setDistance(0.0);
+                    routeNode.setCost(0.0);
+                    routeNode.setChargeDuration(new DurationDTO(0, 0));
+                    routeNode.setReachDuration(new DurationDTO(0, 0));
                 }
 
                 previousId = stationId;
