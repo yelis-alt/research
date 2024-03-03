@@ -203,7 +203,7 @@ public class RoutingServiceImpl implements RoutingService {
             double temp,
             boolean directRouteFlag) {
         try {
-            Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish, directRouteFlag);
+            Map<String, Double> routeParams = getRouteParams(nodeStart, nodeFinish);
             double dist = routeParams.get(DISTANCE);
             double timeDist = routeParams.get(TRIP_DURATION);
             double spendAct = (0.005 * spendOpt * (0.1 * sq(temp) - 4 * temp + 240)) / 100;
@@ -252,7 +252,7 @@ public class RoutingServiceImpl implements RoutingService {
                         edgeMap.put(COST, cost);
                         edgeMap.put(DISTANCE, dist);
                         edgeMap.put(TRIP_DURATION, timeDist);
-                        edgeMap.put(CHARGE_DURATION, timeCharge + timeWait);
+                        edgeMap.put(CHARGE_DURATION, roundToTwoDecimals(timeCharge + timeWait));
 
                         return edgeMap;
                     } else {
@@ -278,7 +278,7 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
-    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish, boolean directRouteFlag)
+    public Map<String, Double> getRouteParams(Station nodeStart, Station nodeFinish)
             throws InterruptedException {
         Map<String, String> routePointMap = getRoutePointsMap(nodeStart, nodeFinish);
         log.info(routePointMap.get(START_POINT) + " --> " + routePointMap.get(FINISH_POINT));

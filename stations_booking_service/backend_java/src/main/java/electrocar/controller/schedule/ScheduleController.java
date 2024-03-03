@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/schedule")
 public class ScheduleController {
-    private static final String STATUS = "status";
-
     private final ScheduleService scheduleService;
 
     @PostMapping(value = "/getTimeWindows")
