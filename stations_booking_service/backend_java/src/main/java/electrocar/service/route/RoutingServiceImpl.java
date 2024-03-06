@@ -622,10 +622,8 @@ public class RoutingServiceImpl implements RoutingService {
                             .toList()
                             .get(0);
                     double chargeDuration = edgeMap.values().iterator().next().get(CHARGE_DURATION);
-                    distanceCumm += roundToTwoDecimals(
-                            edgeMap.values().iterator().next().get(DISTANCE));
-                    costCumm += roundToTwoDecimals(
-                            edgeMap.values().iterator().next().get(COST));
+                    distanceCumm += edgeMap.values().iterator().next().get(DISTANCE);
+                    costCumm += edgeMap.values().iterator().next().get(COST);
                     reachDurationCumm += edgeMap.values().iterator().next().get(TRIP_DURATION);
                     reachDurationCumm += chargeDurationCumm;
                     chargeDurationCumm += chargeDuration;
@@ -635,6 +633,8 @@ public class RoutingServiceImpl implements RoutingService {
                     Integer hours = getHoursFromDuration(reachDurationCumm);
                     Integer minutes = getMinutesFromReachDuration(reachDurationCumm);
 
+                    distanceCumm = roundToTwoDecimals(distanceCumm);
+                    costCumm = roundToTwoDecimals(costCumm);
                     routeNode.setDistance(distanceCumm);
                     routeNode.setCost(costCumm);
                     routeNode.setChargeDuration(new DurationDTO(hoursCharge, minutesCharge));

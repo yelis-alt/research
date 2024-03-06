@@ -6,6 +6,7 @@ let scheduleList;
 let HOST_JAVA = "http://localhost:8080/"
 let REACH_TIME_DESC = "•  Время прибытия:";
 let CHARGE_TIME_DESC = "•  Продолжительность зарядки:";
+let FULL_TIME_DESC = "*Продолжительность маршрута:";
 let WINDOW_PREFIX = "#window"
 let BOOKING_PERIOD = ".booking__period-"
 let CELL_SLIDE = ".booking__period-window";
@@ -288,9 +289,9 @@ function slideWindows(){
 
 function loadFullReachTime() {
     let routeNodeLast = routeResponse[routeResponse.length-1];
-    let fullreachTime = getReachTime(routeNodeLast);
+    let fullTimeIns = FULL_TIME_DESC + getReachTime(routeNodeLast);
 
-    $(".booking__fullreach-desc").append(fullreachTime);
+    $(".booking__fullreach-desc").text(fullTimeIns);
 }
 
 function getReachTime(routeNode) {
