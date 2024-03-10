@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+    frontend:
+        build: ./frontend
+        container_name: frontend
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - ./docker/nginx/log:/var/log/nginx
+        depends_on:
+            - python-application
+            - java-application
+    java-application:
+        build: ./backend_java
+        hostname: java-application
+        container_name: java-application
+        ports:
+            - '8080:8080'
+        links:
+            - postgres
+        volumes:
+            - ./backend_java/src/resources/application.properties:/usr/share/application/application.properties
+        depends_on:
+            - postgres
+            - python-application
+    python-application:
+        build: ./backend_python
+        hostname: python-application
+        container_name: python-application
+        ports:
+            - '5000:5000'
+    postgres:
+        image: postgres:latest
+        container_name: postgres
+        hostname: postgres-db
+        ports:
+            - "5433:5432"
+        volumes:
+            - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./docker/postgres:/var/lib/postgres
+        environment:
+            POSTGRES_DB: electrocar_dev
+            POSTGRES_USER: delphi
+            POSTGRES_PASSWORD: minidelphi

@@ -1,8 +1,0 @@
-.idea
-app
-node_modules
-gulpfile.js
-package-lock.json
-package.json
-docker/mysql/mysql.sock
-dist/backend/python/__pycache__
