@@ -8,5 +8,4 @@ involves mathematical modelling all possible internal and external conditions of
 alongside with mathematical model according to the collected scientific material has been implemented. The practical part 
 deals with the software implementation of the designed method and its following economic justification supported by the model of 
 strategic profit applied to the real corporation. The web application is containerized, which enables it to be deployed on 
-practically any personal computer. For the purposes associated with the acquaintance with this web service it is necessary 
-to follow this link in the browser: http://localhost/chargebook.
+practically any personal computer.
